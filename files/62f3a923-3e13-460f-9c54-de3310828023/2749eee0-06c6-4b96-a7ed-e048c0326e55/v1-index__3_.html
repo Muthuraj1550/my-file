@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>My File Manager</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --card:#fff; --border:#e4e7eb; --text:#1a1d23;
+    --muted:#6b7280; --primary:#2563eb; --primary-hover:#1d4ed8;
+    --danger:#dc2626; --accent:#eff6ff; --radius:10px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+       background:var(--bg);color:var(--text);line-height:1.5}
+  header{background:var(--card);border-bottom:1px solid var(--border);padding:20px 24px;
+         display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+  header h1{margin:0;font-size:22px}
+  header p{margin:4px 0 0;color:var(--muted);font-size:13px}
+  header .who{font-size:12px;color:var(--muted)}
+  main{max-width:960px;margin:0 auto;padding:24px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+        padding:20px;margin-bottom:20px}
+  h2{margin:0 0 14px;font-size:17px}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+  input[type=text],input[type=file],input[type=password],textarea{
+    width:100%;padding:9px 11px;border:1px solid var(--border);
+    border-radius:8px;font-size:14px;font-family:inherit;background:#fff
+  }
+  textarea{resize:vertical;min-height:60px}
+  .row{margin-bottom:12px}
+  button{background:var(--primary);color:#fff;border:0;padding:9px 16px;
+         border-radius:8px;font-size:14px;cursor:pointer;font-weight:500}
+  button:hover{background:var(--primary-hover)}
+  button.ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+  button.ghost:hover{background:var(--bg)}
+  button.danger{background:var(--danger)}
+  button.sm{padding:5px 10px;font-size:12px}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  a.btnlink{text-decoration:none}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+  .proj{padding:14px;border:1px solid var(--border);border-radius:8px;cursor:pointer;
+        background:#fff;transition:box-shadow .15s}
+  .proj:hover{box-shadow:0 2px 8px rgba(0,0,0,.06)}
+  .proj h3{margin:0 0 4px;font-size:15px}
+  .proj p{margin:0;color:var(--muted);font-size:13px}
+  .meta{font-size:12px;color:var(--muted);margin-top:6px}
+  .file{border:1px solid var(--border);border-radius:8px;margin-bottom:10px;background:#fff;overflow:hidden}
+  .file-head{padding:12px 14px;display:flex;justify-content:space-between;
+             align-items:flex-start;gap:10px;flex-wrap:wrap}
+  .file-title{font-weight:600;display:flex;align-items:center;gap:8px}
+  .badge{background:var(--accent);color:var(--primary);padding:2px 8px;
+         border-radius:99px;font-size:11px;font-weight:600}
+  .actions{display:flex;gap:6px;flex-wrap:wrap}
+  .versions{border-top:1px solid var(--border);background:#fafbfc}
+  .ver{padding:8px 14px;display:flex;justify-content:space-between;
+       align-items:center;font-size:13px;border-bottom:1px solid var(--border)}
+  .ver:last-child{border-bottom:0}
+  .toggle{background:none;border:0;color:var(--muted);font-size:13px;
+          padding:6px 14px;cursor:pointer;text-align:left;width:100%;border-top:1px solid var(--border)}
+  .back{display:inline-block;color:var(--muted);text-decoration:none;font-size:13px;margin-bottom:8px;cursor:pointer}
+  .back:hover{color:var(--text)}
+  .hint{font-size:12px;color:var(--muted);margin-top:4px}
+  .empty{color:var(--muted);text-align:center;padding:30px;font-size:14px}
+  .toast{position:fixed;top:20px;right:20px;background:#1a1d23;color:#fff;
+         padding:10px 16px;border-radius:8px;font-size:14px;z-index:1000;
+         box-shadow:0 4px 12px rgba(0,0,0,.15);animation:slide .25s;max-width:320px}
+  .toast.err{background:var(--danger)}
+  .toast.ok{background:#059669}
+  @keyframes slide{from{transform:translateX(20px);opacity:0}to{transform:none;opacity:1}}
+  .banner{background:var(--accent);color:var(--primary);padding:10px 12px;
+          border-radius:8px;font-size:13px;margin-bottom:12px}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;
+           align-items:center;justify-content:center;z-index:900}
+  .spinner{width:34px;height:34px;border:3px solid #fff;border-top-color:transparent;
+           border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  code{background:var(--accent);padding:1px 5px;border-radius:4px;font-size:12px}
+  .setuplink{font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline}
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script type="module">
+// ================= CONFIG (stored locally in this browser) =================
+const CFG_KEY = "gh_filemanager_cfg_v1";
+const MAX = 20 * 1024 * 1024; // 20MB per file
+let cfg = null;
+try{ cfg = JSON.parse(localStorage.getItem(CFG_KEY) || "null"); }catch{ cfg = null; }
+
+const app = document.getElementById("app");
+const GH_API = "https://api.github.com";
+
+// ================= utils =================
+const esc = s => (s ?? "").toString().replace(/[&<>"']/g,
+  c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtSize = n => n<1024?`${n} B`:n<1048576?`${(n/1024).toFixed(1)} KB`:`${(n/1048576).toFixed(2)} MB`;
+const fmtDate = d => new Date(d).toLocaleString();
+const toast = (msg, kind="ok") => {
+  const t = document.createElement("div");
+  t.className = `toast ${kind}`; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3200);
+};
+const uuid = () => crypto.randomUUID();
+let busyCount = 0;
+function busy(on){
+  busyCount += on?1:-1;
+  let ov = document.getElementById("ov");
+  if(busyCount>0){
+    if(!ov){ ov=document.createElement("div"); ov.id="ov"; ov.className="overlay";
+      ov.innerHTML=`<div class="spinner"></div>`; document.body.appendChild(ov); }
+  } else if(ov){ ov.remove(); }
+}
+function b64ToUtf8(b64){
+  const binary = atob(b64.replace(/\n/g,""));
+  const bytes = Uint8Array.from(binary, c=>c.charCodeAt(0));
+  return new TextDecoder("utf-8").decode(bytes);
+}
+function utf8ToB64(str){
+  const bytes = new TextEncoder().encode(str);
+  let binary = "";
+  bytes.forEach(b=>binary+=String.fromCharCode(b));
+  return btoa(binary);
+}
+function fileToB64(file){
+  return new Promise((res,rej)=>{
+    const r = new FileReader();
+    r.onload = ()=>res(r.result.split(",")[1]);
+    r.onerror = ()=>rej(new Error("File read failed"));
+    r.readAsDataURL(file);
+  });
+}
+
+// ================= GitHub API layer =================
+function ghHeaders(){
+  return {
+    "Authorization": `Bearer ${cfg.token}`,
+    "Accept": "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28"
+  };
+}
+async function ghFetch(path, opts={}){
+  const r = await fetch(`${GH_API}${path}`, { ...opts, headers: { ...ghHeaders(), ...(opts.headers||{}) } });
+  if(r.status===404) return null;
+  if(!r.ok){
+    let msg = r.statusText;
+    try{ const j = await r.json(); msg = j.message || msg; }catch{}
+    throw new Error(`GitHub error (${r.status}): ${msg}`);
+  }
+  if(r.status===204) return true;
+  return r.json();
+}
+const repoBase = () => `/repos/${cfg.owner}/${cfg.repo}`;
+
+async function getManifest(){
+  const data = await ghFetch(`${repoBase()}/contents/manifest.json?ref=${encodeURIComponent(cfg.branch)}`);
+  if(!data) return { projects:[], files:[] };
+  return JSON.parse(b64ToUtf8(data.content));
+}
+
+// Commit one or more file changes (create/update/delete) + manifest.json update atomically
+async function commitChanges(entries, message){
+  const ref = await ghFetch(`${repoBase()}/git/ref/heads/${encodeURIComponent(cfg.branch)}`);
+  if(!ref) throw new Error("Branch not found. Check the branch name in settings.");
+  const baseCommitSha = ref.object.sha;
+  const commit = await ghFetch(`${repoBase()}/git/commits/${baseCommitSha}`);
+  const baseTreeSha = commit.tree.sha;
+
+  const treeEntries = [];
+  for(const e of entries){
+    if(e.content===null){
+      treeEntries.push({ path: e.path, mode:"100644", type:"blob", sha: null });
+    } else {
+      const blob = await ghFetch(`${repoBase()}/git/blobs`, {
+        method:"POST",
+        body: JSON.stringify({ content: e.content, encoding:"base64" })
+      });
+      treeEntries.push({ path: e.path, mode:"100644", type:"blob", sha: blob.sha });
+    }
+  }
+  const tree = await ghFetch(`${repoBase()}/git/trees`, {
+    method:"POST",
+    body: JSON.stringify({ base_tree: baseTreeSha, tree: treeEntries })
+  });
+  const newCommit = await ghFetch(`${repoBase()}/git/commits`, {
+    method:"POST",
+    body: JSON.stringify({ message, tree: tree.sha, parents:[baseCommitSha] })
+  });
+  await ghFetch(`${repoBase()}/git/refs/heads/${encodeURIComponent(cfg.branch)}`, {
+    method:"PATCH",
+    body: JSON.stringify({ sha: newCommit.sha })
+  });
+}
+
+function rawUrl(path){
+  return `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${cfg.branch}/${path}`;
+}
+function cdnUrl(path){
+  return `https://cdn.jsdelivr.net/gh/${cfg.owner}/${cfg.repo}@${cfg.branch}/${path}`;
+}
+
+// ================= state / router =================
+let view = { name: cfg ? "home" : "setup" };
+const go = v => { view = v; render(); };
+window.addEventListener("popstate", e => { if(e.state) view=e.state; render(); });
+const push = v => { history.pushState(v, "", ""); view=v; render(); };
+
+async function render(){
+  if(view.name==="setup") renderSetup();
+  else if(view.name==="home") await renderHome();
+  else if(view.name==="project") await renderProject(view.id);
+  window.scrollTo(0,0);
+}
+
+// ================= SETUP =================
+function renderSetup(){
+  app.innerHTML = `
+    <header><div><h1>My File Manager</h1><p>GitHub-powered · works from any device</p></div></header>
+    <main>
+      <div class="card">
+        <h2>Connect your GitHub repository</h2>
+        <p class="hint" style="margin-bottom:14px">
+          1) Create a <b>public</b> GitHub repo (tick "Add a README").<br>
+          2) Create a Personal Access Token: GitHub → Settings → Developer settings →
+          Personal access tokens → Tokens (classic) → Generate new token → scope <code>repo</code>.<br>
+          3) Fill in the details below. This is saved only in this browser (localStorage), never sent anywhere else.
+        </p>
+        <form id="sf">
+          <div class="row"><label>GitHub username</label><input type="text" id="s-owner" placeholder="e.g. rajesh123" required></div>
+          <div class="row"><label>Repository name</label><input type="text" id="s-repo" placeholder="e.g. my-files" required></div>
+          <div class="row"><label>Branch</label><input type="text" id="s-branch" placeholder="main" value="main" required></div>
+          <div class="row"><label>Personal Access Token</label><input type="password" id="s-token" placeholder="ghp_xxxxxxxxxxxx" required></div>
+          <button type="submit">Connect</button>
+        </form>
+      </div>
+    </main>
+  `;
+  document.getElementById("sf").onsubmit = async e => {
+    e.preventDefault();
+    const owner = document.getElementById("s-owner").value.trim();
+    const repo = document.getElementById("s-repo").value.trim();
+    const branch = document.getElementById("s-branch").value.trim() || "main";
+    const token = document.getElementById("s-token").value.trim();
+    if(!owner||!repo||!token) return;
+    const testCfg = { owner, repo, branch, token };
+    busy(true);
+    try{
+      const r = await fetch(`${GH_API}/repos/${owner}/${repo}`, {
+        headers: { "Authorization": `Bearer ${token}`, "Accept":"application/vnd.github+json" }
+      });
+      if(!r.ok) throw new Error("Could not access this repo. Check the username, repo name and token.");
+      cfg = testCfg;
+      localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+      toast("Connected!");
+      push({ name:"home" });
+    }catch(err){
+      toast(err.message,"err");
+    }finally{ busy(false); }
+  };
+}
+
+// ================= HOME =================
+async function renderHome(){
+  app.innerHTML = `
+    <header>
+      <div><h1>My File Manager</h1><p>Projects · Versioned uploads · HTML hosting (max ${(MAX/1048576)|0}MB)</p></div>
+      <div class="who">${esc(cfg.owner)}/${esc(cfg.repo)} · <span class="setuplink" id="resetlink">change</span></div>
+    </header>
+    <main>
+      <div class="card">
+        <h2>+ New Project</h2>
+        <form id="pf">
+          <div class="row"><input type="text" id="pt" placeholder="Project title" required></div>
+          <div class="row"><textarea id="pd" placeholder="Description (optional)"></textarea></div>
+          <button type="submit">Create Project</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Your Projects</h2>
+        <div id="plist" class="empty">Loading…</div>
+      </div>
+    </main>
+  `;
+  document.getElementById("resetlink").onclick = () => {
+    if(confirm("Disconnect this repo from this browser?")){
+      localStorage.removeItem(CFG_KEY); cfg=null; push({name:"setup"});
+    }
+  };
+
+  document.getElementById("pf").onsubmit = async e => {
+    e.preventDefault();
+    const title = document.getElementById("pt").value.trim();
+    const desc = document.getElementById("pd").value.trim();
+    if(!title) return;
+    busy(true);
+    try{
+      const manifest = await getManifest();
+      manifest.projects.unshift({ id: uuid(), title, description: desc||null, created_at: new Date().toISOString() });
+      await commitChanges([{ path:"manifest.json", content: utf8ToB64(JSON.stringify(manifest,null,2)) }], `Create project: ${title}`);
+      toast("Project created");
+      e.target.reset();
+      loadProjects();
+    }catch(err){ toast(err.message,"err"); }
+    finally{ busy(false); }
+  };
+
+  loadProjects();
+}
+
+async function loadProjects(){
+  const box = document.getElementById("plist");
+  try{
+    const manifest = await getManifest();
+    const data = manifest.projects;
+    if(!data.length){ box.innerHTML = `<div class="empty">No projects yet.</div>`; return; }
+    box.className = "grid";
+    box.innerHTML = data.map(p=>`
+      <div class="proj" data-id="${p.id}">
+        <h3>📁 ${esc(p.title)}</h3>
+        ${p.description?`<p>${esc(p.description)}</p>`:""}
+        <div class="meta">${fmtDate(p.created_at)}</div>
+        <div style="margin-top:8px"><button class="ghost sm del" data-id="${p.id}">Delete</button></div>
+      </div>
+    `).join("");
+    box.querySelectorAll(".proj").forEach(el=>{
+      el.onclick = e => {
+        if(e.target.classList.contains("del")) return;
+        push({ name:"project", id: el.dataset.id });
+      };
+    });
+    box.querySelectorAll(".del").forEach(b=>{
+      b.onclick = async e => {
+        e.stopPropagation();
+        if(!confirm("Delete this project and all its files?")) return;
+        busy(true);
+        try{
+          const m = await getManifest();
+          const filesToDelete = m.files.filter(f=>f.project_id===b.dataset.id);
+          m.files = m.files.filter(f=>f.project_id!==b.dataset.id);
+          m.projects = m.projects.filter(p=>p.id!==b.dataset.id);
+          const entries = filesToDelete.map(f=>({ path:f.path, content:null }));
+          entries.push({ path:"manifest.json", content: utf8ToB64(JSON.stringify(m,null,2)) });
+          await commitChanges(entries, "Delete project");
+          toast("Deleted"); loadProjects();
+        }catch(err){ toast(err.message,"err"); }
+        finally{ busy(false); }
+      };
+    });
+  }catch(err){ box.innerHTML = `<div class="empty">${esc(err.message)}</div>`; }
+}
+
+// ================= PROJECT =================
+let uploadGroup = "";
+let uploadDefaultTitle = "";
+const expanded = new Set();
+
+async function renderProject(id){
+  app.innerHTML = `
+    <header>
+      <div><h1>My File Manager</h1><p>Project files</p></div>
+      <div class="who">${esc(cfg.owner)}/${esc(cfg.repo)}</div>
+    </header>
+    <main>
+      <a class="back" id="back">← Back to projects</a>
+      <div class="card">
+        <h2 id="uploadH">⬆ Upload File</h2>
+        <div id="vbanner"></div>
+        <form id="uf">
+          <div class="row"><input type="text" id="ut" placeholder="File title" required></div>
+          <div class="row"><textarea id="ud" placeholder="Description (optional)"></textarea></div>
+          <div class="row"><input type="file" id="uflinput" required></div>
+          <div class="hint">Max ${(MAX/1048576)|0}MB per file.</div>
+          <button type="submit" id="ubtn" style="margin-top:8px">Upload</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Files</h2>
+        <div id="flist" class="empty">Loading…</div>
+      </div>
+    </main>
+  `;
+  document.getElementById("back").onclick = ()=>push({name:"home"});
+
+  syncUploadUI();
+
+  document.getElementById("uf").onsubmit = async e => {
+    e.preventDefault();
+    const title = document.getElementById("ut").value.trim();
+    const desc = document.getElementById("ud").value.trim();
+    const f = document.getElementById("uflinput").files[0];
+    if(!f) return toast("Choose a file","err");
+    if(f.size > MAX) return toast(`Exceeds ${(MAX/1048576)|0}MB`,"err");
+
+    const btn = document.getElementById("ubtn");
+    btn.disabled = true; btn.textContent = "Uploading…";
+    busy(true);
+    try{
+      const manifest = await getManifest();
+      const fgId = uploadGroup || uuid();
+      let version = 1;
+      if(uploadGroup){
+        const existing = manifest.files.filter(x=>x.file_group_id===uploadGroup);
+        version = (existing.length ? Math.max(...existing.map(x=>x.version)) : 0) + 1;
+      }
+      const safe = f.name.replace(/[^\w.\-]/g,"_");
+      const path = `files/${id}/${fgId}/v${version}-${safe}`;
+      const b64 = await fileToB64(f);
+
+      manifest.files.unshift({
+        id: uuid(), project_id: id, file_group_id: fgId,
+        title, description: desc||null, version,
+        path, original_name: f.name,
+        mime_type: f.type||null, size_bytes: f.size,
+        created_at: new Date().toISOString()
+      });
+
+      await commitChanges([
+        { path, content: b64 },
+        { path:"manifest.json", content: utf8ToB64(JSON.stringify(manifest,null,2)) }
+      ], `Upload ${title} v${version}`);
+
+      toast(version===1?"File uploaded":`Uploaded as Version ${version}`);
+      uploadGroup=""; uploadDefaultTitle="";
+      e.target.reset();
+      syncUploadUI();
+      loadFiles(id);
+    }catch(err){
+      toast(err.message||"Upload failed","err");
+    }finally{
+      btn.disabled=false; btn.textContent="Upload"; busy(false);
+    }
+  };
+
+  loadFiles(id);
+}
+
+function syncUploadUI(){
+  const h = document.getElementById("uploadH");
+  const b = document.getElementById("vbanner");
+  const t = document.getElementById("ut");
+  if(uploadGroup){
+    h.textContent = "⬆ Upload New Version";
+    t.value = uploadDefaultTitle; t.disabled = true;
+    b.innerHTML = `<div class="banner">Uploading a new version.
+      <a href="#" id="cancelV" style="color:inherit;text-decoration:underline">Cancel</a></div>`;
+    document.getElementById("cancelV").onclick = e => {
+      e.preventDefault(); uploadGroup=""; uploadDefaultTitle=""; t.disabled=false; t.value=""; syncUploadUI();
+    };
+  }else{
+    h.textContent = "⬆ Upload File"; t.disabled=false; b.innerHTML="";
+  }
+}
+
+async function loadFiles(projectId){
+  const box = document.getElementById("flist");
+  let manifest;
+  try{ manifest = await getManifest(); }
+  catch(err){ box.innerHTML = `<div class="empty">${esc(err.message)}</div>`; return; }
+
+  const data = manifest.files.filter(f=>f.project_id===projectId);
+  if(!data.length){ box.innerHTML=`<div class="empty">No files yet.</div>`; return; }
+  box.className="";
+
+  const groups = {};
+  data.forEach(f => (groups[f.file_group_id] ||= []).push(f));
+  const list = Object.values(groups)
+    .map(arr => arr.sort((a,b)=>b.version-a.version))
+    .sort((a,b)=>new Date(b[0].created_at)-new Date(a[0].created_at));
+
+  box.innerHTML = list.map(versions => {
+    const latest = versions[0];
+    const isHtml = (latest.mime_type||"").includes("html") || /\.html?$/i.test(latest.original_name);
+    const open = expanded.has(latest.file_group_id);
+    return `
+      <div class="file">
+        <div class="file-head">
+          <div style="flex:1;min-width:0">
+            <div class="file-title">📄 ${esc(latest.title)} <span class="badge">v${latest.version}</span></div>
+            ${latest.description?`<div style="color:var(--muted);font-size:13px;margin-top:4px">${esc(latest.description)}</div>`:""}
+            <div class="meta">${esc(latest.original_name)} · ${fmtSize(latest.size_bytes)} · ${fmtDate(latest.created_at)}</div>
+          </div>
+          <div class="actions">
+            ${isHtml?`<a class="btnlink" href="${cdnUrl(latest.path)}" target="_blank"><button class="ghost sm" type="button">🌐 Open</button></a>`:""}
+            <a class="btnlink" href="${rawUrl(latest.path)}" download="${esc(latest.original_name)}"><button class="ghost sm" type="button">⬇ Download</button></a>
+            <button class="sm nv" data-g="${latest.file_group_id}" data-t="${esc(latest.title)}">New Version</button>
+            <button class="danger sm rmg" data-g="${latest.file_group_id}" data-t="${esc(latest.title)}">🗑 Delete</button>
+          </div>
+        </div>
+        ${versions.length>1?`
+          <button class="toggle" data-tg="${latest.file_group_id}">
+            ${open?"▼":"▶"} ${versions.length} versions
+          </button>
+          ${open?`<div class="versions">${versions.map(v=>{
+            const vhtml = (v.mime_type||"").includes("html") || /\.html?$/i.test(v.original_name);
+            return `
+              <div class="ver">
+                <div><b>v${v.version}</b> <span style="color:var(--muted)">· ${fmtDate(v.created_at)} · ${fmtSize(v.size_bytes)}</span></div>
+                <div class="actions">
+                  ${vhtml?`<a class="btnlink" href="${cdnUrl(v.path)}" target="_blank"><button class="ghost sm" type="button">🌐</button></a>`:""}
+                  <a class="btnlink" href="${rawUrl(v.path)}" download="${esc(v.original_name)}"><button class="ghost sm" type="button">⬇</button></a>
+                  <button class="ghost sm rm" data-id="${v.id}" data-path="${v.path}">🗑</button>
+                </div>
+              </div>`;
+          }).join("")}</div>`:""}
+        `:""}
+      </div>`;
+  }).join("");
+
+  box.querySelectorAll(".nv").forEach(b=>{
+    b.onclick = () => {
+      uploadGroup = b.dataset.g; uploadDefaultTitle = b.dataset.t;
+      syncUploadUI();
+      window.scrollTo({top:0,behavior:"smooth"});
+      toast("Pick the corrected file to upload");
+    };
+  });
+  box.querySelectorAll(".toggle").forEach(b=>{
+    b.onclick = () => {
+      const k = b.dataset.tg;
+      if(expanded.has(k)) expanded.delete(k); else expanded.add(k);
+      loadFiles(projectId);
+    };
+  });
+  box.querySelectorAll(".rm").forEach(b=>{
+    b.onclick = async () => {
+      if(!confirm("Delete this version?")) return;
+      busy(true);
+      try{
+        const m = await getManifest();
+        m.files = m.files.filter(f=>f.id!==b.dataset.id);
+        await commitChanges([
+          { path: b.dataset.path, content: null },
+          { path:"manifest.json", content: utf8ToB64(JSON.stringify(m,null,2)) }
+        ], "Delete file version");
+        toast("Deleted"); loadFiles(projectId);
+      }catch(err){ toast(err.message,"err"); }
+      finally{ busy(false); }
+    };
+  });
+  box.querySelectorAll(".rmg").forEach(b=>{
+    b.onclick = async () => {
+      const t = b.dataset.t || "this file";
+      if(!confirm(`Delete "${t}" and ALL its versions? This cannot be undone.`)) return;
+      busy(true);
+      try{
+        const m = await getManifest();
+        const vers = m.files.filter(f=>f.file_group_id===b.dataset.g);
+        m.files = m.files.filter(f=>f.file_group_id!==b.dataset.g);
+        const entries = vers.map(v=>({ path:v.path, content:null }));
+        entries.push({ path:"manifest.json", content: utf8ToB64(JSON.stringify(m,null,2)) });
+        await commitChanges(entries, `Delete ${t}`);
+        toast("File deleted"); loadFiles(projectId);
+      }catch(err){ toast(err.message,"err"); }
+      finally{ busy(false); }
+    };
+  });
+}
+
+render();
+</script>
+</body>
+</html>
