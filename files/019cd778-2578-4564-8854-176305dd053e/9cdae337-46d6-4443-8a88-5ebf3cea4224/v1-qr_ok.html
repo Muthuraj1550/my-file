@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>3D Visiting Card Builder — Cloud Short Link</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function(){
+  const SUPABASE_URL = "https://fzrakamsvcoybhbywndf.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_2B_V5cLv9PyQ4uEtPEGqXg_l5gLQONX";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession:false, autoRefreshToken:false }
+  });
+
+  const css = `
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif}
+body{min-height:100vh;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);color:#fff;padding:20px}
+.wrap{max-width:1200px;margin:0 auto}
+h1{text-align:center;margin-bottom:20px;font-size:clamp(20px,4vw,28px);background:linear-gradient(90deg,#FFD700,#FFA500);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}}
+.panel{background:rgba(255,255,255,.06);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:20px}
+label{display:block;margin:10px 0 4px;font-size:12px;color:#bbb}
+input,textarea{width:100%;padding:9px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;font-size:13px;font-family:inherit}
+input:focus{outline:none;border-color:#FFD700}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.socials{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:520px){.socials{grid-template-columns:1fr}}
+button{cursor:pointer;border:none;padding:11px 16px;border-radius:8px;font-weight:600;font-size:13px;transition:transform .15s;font-family:inherit}
+button:hover{transform:translateY(-1px)}
+.btn-primary{background:linear-gradient(135deg,#FFD700,#FFA500);color:#000;width:100%;margin-top:14px}
+.btn-primary:disabled{opacity:.6;cursor:wait}
+.btn-sec{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);text-decoration:none;display:inline-block}
+.actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.link-box{margin-top:12px;padding:10px;background:rgba(0,0,0,.4);border-radius:8px;word-break:break-all;font-size:13px;color:#9fd;display:none}
+.note{margin-top:10px;font-size:11px;color:#888;text-align:center}
+.stage{perspective:1500px;display:flex;justify-content:center;align-items:center;min-height:300px;touch-action:none}
+.card3d{position:relative;transform-style:preserve-3d;transition:transform .12s ease-out;cursor:grab;will-change:transform;width:min(90vw,360px);aspect-ratio:1.7/1}
+.card3d.dragging{cursor:grabbing;transition:none}
+.face{position:absolute;inset:0;border-radius:18px;padding:22px;box-shadow:0 30px 60px rgba(0,0,0,.55),0 0 0 1px rgba(255,215,0,.25);overflow:hidden;color:#fff;display:flex;flex-direction:column;gap:3px}
+.face::before{content:"";position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:linear-gradient(45deg,transparent 40%,rgba(255,215,0,.12) 50%,transparent 60%);animation:shine 5s linear infinite;pointer-events:none}
+@keyframes shine{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.nm{font-size:clamp(16px,3.2vw,22px);font-weight:700;color:#FFD700;line-height:1.1}
+.pr{font-size:12px;color:#ccc;margin-bottom:6px}
+.ln{font-size:11.5px;color:#eee;display:flex;align-items:center;gap:6px;margin:1px 0}
+.ln svg{width:12px;height:12px;fill:#FFD700;flex-shrink:0}
+.ln span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
+.qr{position:absolute;bottom:14px;right:14px;background:#fff;padding:4px;border-radius:6px}
+.qr canvas{display:block;width:100px;height:100px}
+.sr{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.sr a{width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:rgba(255,215,0,.18);border-radius:50%;text-decoration:none}
+.sr svg{width:12px;height:12px;fill:#FFD700}
+.brand{position:absolute;bottom:10px;left:22px;font-size:9px;color:#aaa;letter-spacing:2px}
+.view-mode{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:20px}
+.view-mode .stage{min-height:60vh}
+.view-mode .card3d{width:min(92vw,460px)}
+.view-mode .qr canvas{width:130px;height:130px}
+.view-actions{margin-top:24px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.hint{text-align:center;font-size:11px;color:#888;margin-top:14px}
+.loading{text-align:center;padding:40px;color:#FFD700;font-size:18px}
+`;
+  const styleEl=document.createElement('style');styleEl.textContent=css;document.head.appendChild(styleEl);
+
+  const ALPHA='abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  function shortId(n){let s='';for(let i=0;i<n;i++)s+=ALPHA[Math.floor(Math.random()*ALPHA.length)];return s}
+  // Base URL = current page WITHOUT any /s/CODE, ?s=CODE or #s=CODE suffix
+  function baseUrl(){
+    let u=location.origin+location.pathname;
+    // strip trailing /s/CODE
+    u=u.replace(/\/s\/[A-Za-z0-9]+\/?$/,'');
+    if(!u.endsWith('/')&&!/\.[a-z0-9]+$/i.test(u))u+='/';
+    return u;
+  }
+  // Build a clean short link. If hosted at a domain root (lovable.app etc.), uses /s/CODE.
+  // If opened as a local .html file, falls back to ?s=CODE so it still works without a server.
+  function buildShortLink(code){
+    const path=location.pathname;
+    const isFile=/\.html?$/i.test(path)||location.protocol==='file:';
+    if(isFile) return location.origin+path+'?s='+code;
+    return baseUrl().replace(/\/$/,'')+'/s/'+code;
+  }
+  function detectCode(){
+    let m=location.pathname.match(/\/s\/([A-Za-z0-9]+)\/?$/);
+    if(m) return m[1];
+    m=location.search.match(/[?&]s=([A-Za-z0-9]+)/);
+    if(m) return m[1];
+    m=location.hash.match(/^#s=([A-Za-z0-9]+)$/);
+    if(m) return m[1];
+    return null;
+  }
+
+  async function saveToCloud(data,len){
+    len=Math.max(4,Math.min(10,parseInt(len)||10));
+    for(let i=0;i<8;i++){
+      const code=shortId(len);
+      const {error}=await sb.from('cards').insert({code,data});
+      if(!error) return code;
+      if(error.code!=='23505') throw new Error(error.message||'Save failed');
+    }
+    throw new Error('Could not generate a unique code, please retry.');
+  }
+  async function loadFromCloud(code){
+    const {data,error}=await sb.from('cards').select('data').eq('code',code).maybeSingle();
+    if(error) throw new Error(error.message);
+    return data?data.data:null;
+  }
+
+  const ICONS={
+   whatsapp:'<svg viewBox="0 0 24 24"><path d="M17.5 14.4l-2.2-1.1c-.3-.1-.6 0-.8.2l-.6.7c-1.1-.5-2-1.4-2.5-2.5l.7-.6c.2-.2.3-.5.2-.8L11.2 8.1c-.2-.5-.7-.6-1.1-.4L8.7 8.4c-.4.2-.7.7-.6 1.1.5 3 2.9 5.4 5.9 5.9.4.1.9-.2 1.1-.6l.7-1.4c.2-.4.1-.9-.3-1zM12 2a10 10 0 1 0 5.2 18.5L22 22l-1.5-4.8A10 10 0 0 0 12 2z"/></svg>',
+   phone:'<svg viewBox="0 0 24 24"><path d="M20 15.5c-1.2 0-2.5-.2-3.6-.6-.3-.1-.7 0-1 .2l-2.2 2.2c-2.8-1.4-5.1-3.7-6.6-6.6l2.2-2.2c.3-.3.4-.7.2-1-.4-1.1-.6-2.4-.6-3.6 0-.6-.4-1-1-1H4c-.6 0-1 .4-1 1 0 9.4 7.6 17 17 17 .6 0 1-.4 1-1v-3.4c0-.6-.4-1-1-1z"/></svg>',
+   email:'<svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>',
+   website:'<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18c-1 0-2.6-2.4-3.2-6h6.4c-.6 3.6-2.2 6-3.2 6zm-3.5-8c-.1-.7-.1-1.3-.1-2s0-1.3.1-2h7c.1.7.1 1.3.1 2s0 1.3-.1 2h-7z"/></svg>',
+   address:'<svg viewBox="0 0 24 24"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>',
+   instagram:'<svg viewBox="0 0 24 24"><path d="M12 2.2c3.2 0 3.6 0 4.8.1 3.3.1 4.8 1.7 4.9 4.9.1 1.2.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 3.2-1.7 4.8-4.9 4.9-1.2.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-3.3-.1-4.8-1.7-4.9-4.9C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c.1-3.3 1.7-4.8 4.9-4.9C8.4 2.2 8.8 2.2 12 2.2zM12 7.4a4.6 4.6 0 1 0 0 9.2 4.6 4.6 0 0 0 0-9.2zm0 7.6a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm4.8-7.7a1.1 1.1 0 1 0 0-2.2 1.1 1.1 0 0 0 0 2.2z"/></svg>',
+   facebook:'<svg viewBox="0 0 24 24"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.3v7A10 10 0 0 0 22 12z"/></svg>',
+   linkedin:'<svg viewBox="0 0 24 24"><path d="M20.5 2h-17A1.5 1.5 0 0 0 2 3.5v17A1.5 1.5 0 0 0 3.5 22h17a1.5 1.5 0 0 0 1.5-1.5v-17A1.5 1.5 0 0 0 20.5 2zM8 19H5V9h3v10zM6.5 7.7a1.7 1.7 0 1 1 0-3.5 1.7 1.7 0 0 1 0 3.5zM19 19h-3v-5c0-1.2-.4-2-1.5-2s-1.7.8-1.7 2v5h-3V9h3v1.3c.4-.6 1.2-1.5 2.9-1.5 2.1 0 3.3 1.4 3.3 4.1V19z"/></svg>',
+   twitter:'<svg viewBox="0 0 24 24"><path d="M18.9 2H22l-7.4 8.4L23 22h-6.8l-5.3-7-6.1 7H1.7L9.6 13 1 2h7l4.8 6.4L18.9 2z"/></svg>',
+   youtube:'<svg viewBox="0 0 24 24"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5a3 3 0 0 0-2.1 2.1C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.6 15.6V8.4l6.2 3.6-6.2 3.6z"/></svg>',
+   github:'<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.8c-2.8.6-3.4-1.3-3.4-1.3-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.7-1.4-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.7 1a9.4 9.4 0 0 1 5 0c1.9-1.3 2.7-1 2.7-1 .5 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.9-2.4 4.7-4.6 5 .4.3.7.9.7 1.8v2.7c0 .3.2.6.7.5A10 10 0 0 0 12 2z"/></svg>'
+  };
+  const LINKS={
+   whatsapp:n=>'https://wa.me/'+n.replace(/\D/g,''),
+   phone:n=>'tel:'+n,
+   email:e=>'mailto:'+e,
+   website:u=>u.startsWith('http')?u:'https://'+u,
+   instagram:u=>'https://instagram.com/'+u.replace('@',''),
+   facebook:u=>'https://facebook.com/'+u,
+   linkedin:u=>'https://linkedin.com/in/'+u,
+   twitter:u=>'https://twitter.com/'+u.replace('@',''),
+   youtube:u=>'https://youtube.com/@'+u.replace('@',''),
+   github:u=>'https://github.com/'+u
+  };
+  function esc(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+  function makeQR(text,size){
+   try{
+    const qr=qrcode(0,'M');qr.addData(text||' ');qr.make();
+    const c=qr.getModuleCount(),s=size/c;
+    const cv=document.createElement('canvas');cv.width=size;cv.height=size;
+    const ctx=cv.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,size,size);ctx.fillStyle='#000';
+    for(let r=0;r<c;r++)for(let col=0;col<c;col++)if(qr.isDark(r,col))ctx.fillRect(col*s,r*s,s,s);
+    return cv;
+   }catch(e){
+    const cv=document.createElement('canvas');cv.width=size;cv.height=size;
+    const ctx=cv.getContext('2d');ctx.fillStyle='#eee';ctx.fillRect(0,0,size,size);
+    return cv;
+   }
+  }
+
+  function renderCard(d,el,qrUrl){
+   const lines=[];
+   if(d.phone)lines.push({k:'phone',v:d.phone});
+   if(d.whatsapp)lines.push({k:'whatsapp',v:d.whatsapp});
+   if(d.email)lines.push({k:'email',v:d.email});
+   if(d.website)lines.push({k:'website',v:d.website});
+   if(d.address)lines.push({k:'address',v:d.address});
+   const socials=['instagram','facebook','linkedin','twitter','youtube','github'].filter(k=>d[k]);
+   const linesH=lines.slice(0,4).map(l=>'<div class="ln">'+ICONS[l.k]+'<span>'+esc(l.v)+'</span></div>').join('');
+   const socH=socials.map(k=>'<a href="'+LINKS[k](d[k])+'" target="_blank" rel="noopener">'+ICONS[k]+'</a>').join('');
+   el.innerHTML='<div class="card3d"><div class="face" style="background:linear-gradient(135deg,'+(d.color1||'#1a1a2e')+','+(d.color2||'#16213e')+')">'+
+    '<div class="nm">'+(esc(d.name)||'Your Name')+'</div>'+
+    '<div class="pr">'+(esc(d.profession)||'Profession')+'</div>'+
+    linesH+'<div class="sr">'+socH+'</div>'+
+    '<div class="brand">'+(esc(d.brand).toUpperCase()||'YOUR BRAND')+'</div>'+
+    '<div class="qr"></div></div></div>';
+   const qrText=qrUrl||(d.website?LINKS.website(d.website):(d.whatsapp?LINKS.whatsapp(d.whatsapp):(d.phone?LINKS.phone(d.phone):location.href)));
+   el.querySelector('.qr').appendChild(makeQR(qrText,130));
+   attachRotation(el.querySelector('.card3d'));
+  }
+
+  function attachRotation(card){
+   if(!card||card._wired)return;card._wired=true;
+   let t=0,dragging=false,sx=0,sy=0,offY=0,offX=0,baseY=0,baseX=0;
+   const apply=()=>{const y=Math.max(-60,Math.min(60,baseY+offY));const x=Math.max(-25,Math.min(25,baseX+offX));card.style.transform='rotateY('+y+'deg) rotateX('+x+'deg) translateY('+Math.sin(t/40)*-8+'px)'};
+   const tick=()=>{if(!dragging){t++;baseY=Math.sin(t/55)*22;baseX=Math.cos(t/70)*10;apply()}requestAnimationFrame(tick)};
+   tick();
+   const pt=e=>e.touches?{x:e.touches[0].clientX,y:e.touches[0].clientY}:{x:e.clientX,y:e.clientY};
+   const down=e=>{dragging=true;card.classList.add('dragging');const p=pt(e);sx=p.x;sy=p.y};
+   const move=e=>{if(!dragging)return;const p=pt(e);offY=(p.x-sx)*0.4;offX=-(p.y-sy)*0.3;apply();if(e.touches)e.preventDefault()};
+   const up=()=>{if(!dragging)return;dragging=false;card.classList.remove('dragging');baseY=Math.max(-60,Math.min(60,baseY+offY));baseX=Math.max(-25,Math.min(25,baseX+offX));offY=0;offX=0};
+   card.addEventListener('mousedown',down);window.addEventListener('mousemove',move);window.addEventListener('mouseup',up);
+   card.addEventListener('touchstart',down,{passive:true});window.addEventListener('touchmove',move,{passive:false});window.addEventListener('touchend',up);
+  }
+
+  function builderUI(){
+   const app=document.getElementById('app');
+   const d={name:'',profession:'',brand:'',phone:'',whatsapp:'',email:'',website:'',address:'',color1:'#1a1a2e',color2:'#16213e',instagram:'',facebook:'',linkedin:'',twitter:'',youtube:'',github:''};
+   app.innerHTML='<div class="wrap"><h1>✦ 3D Visiting Card Builder ✦</h1><div class="layout">'+
+    '<div class="panel">'+
+     '<label>Mobile Number *</label><input id="f-phone" placeholder="+91 98765 43210">'+
+     '<label>Full Name *</label><input id="f-name" placeholder="உங்கள் பெயர்">'+
+     '<label>Address</label><input id="f-address" placeholder="City, State">'+
+     '<label>Profession / Title</label><input id="f-profession" placeholder="Software Engineer">'+
+     '<label>Brand / Company</label><input id="f-brand" placeholder="Company Name">'+
+     '<div class="row"><div><label>WhatsApp</label><input id="f-whatsapp" placeholder="+91..."></div>'+
+     '<div><label>Email</label><input id="f-email" placeholder="you@email.com"></div></div>'+
+     '<label>Website</label><input id="f-website" placeholder="example.com">'+
+     '<label>Card Colors</label><div class="row"><input type="color" id="f-color1" value="'+d.color1+'"><input type="color" id="f-color2" value="'+d.color2+'"></div>'+
+     '<label>Social Profiles (usernames)</label><div class="socials">'+
+      ['instagram','facebook','linkedin','twitter','youtube','github'].map(k=>'<div><label style="font-size:11px">'+k+'</label><input id="f-'+k+'" placeholder="@username"></div>').join('')+
+     '</div>'+
+     '<label>Short Code Length <span id="lenv" style="color:#FFD700">10</span> <small style="color:#888">(4-10 chars · 10 = best for 3D print QR)</small></label>'+
+     '<input type="range" id="f-len" min="4" max="10" value="10" step="1" style="padding:0">'+
+     '<button class="btn-primary" id="gen">⚡ Generate Cloud Short Link & QR</button>'+
+     '<div class="link-box" id="link-box"></div>'+
+     '<div class="actions" id="post" style="display:none">'+
+      '<button class="btn-sec" id="copy">📋 Copy Short Link</button>'+
+      '<button class="btn-sec" id="open">🔗 Open Short Link</button>'+
+     '</div>'+
+     '<p class="note">Short link உங்க own domain-ல host ஆகும். Any browser / device-ல open பண்ணினா auto-redirect ஆகி card preview காட்டும். No third-party shortener, no ads, no preview page.</p>'+
+    '</div>'+
+    '<div class="panel"><div class="stage" id="stage"></div><p class="hint">Live preview · drag to rotate · auto-floats</p></div>'+
+   '</div></div>';
+
+   const FIELDS=['name','profession','brand','phone','whatsapp','email','website','address','color1','color2','instagram','facebook','linkedin','twitter','youtube','github'];
+   const get=()=>{const o={};FIELDS.forEach(k=>o[k]=document.getElementById('f-'+k).value);return o};
+   const stage=document.getElementById('stage');
+   const update=()=>renderCard(get(),stage);
+   app.querySelectorAll('input').forEach(i=>i.addEventListener('input',update));
+   update();
+
+   const lenEl=document.getElementById('f-len');
+   const lenv=document.getElementById('lenv');
+   lenEl.addEventListener('input',()=>{lenv.textContent=lenEl.value});
+
+   document.getElementById('gen').onclick=async ()=>{
+    const btn=document.getElementById('gen');
+    const box=document.getElementById('link-box');
+    const data=get();
+    if(!data.name && !data.phone){alert('Name அல்லது Phone number enter பண்ணுங்க!');return}
+    btn.disabled=true;btn.textContent='Uploading to cloud…';
+    try{
+     const code=await saveToCloud(data,lenEl.value);
+     const shortLink=buildShortLink(code);
+     box.style.display='block';
+     box.innerHTML='<strong>🔗 SHORT LINK:</strong><br>'+esc(shortLink)+
+       '<br><small style="color:#9fd;font-size:10px">✅ Any browser / device-ல open பண்ணினா direct card preview. No ads, no preview page.</small>';
+     document.getElementById('post').style.display='flex';
+     document.getElementById('copy').onclick=()=>navigator.clipboard.writeText(shortLink).then(()=>alert('Short link copied!'));
+     document.getElementById('open').onclick=()=>window.open(shortLink,'_blank');
+     renderCard(data,stage,shortLink);
+    }catch(e){alert('Error: '+e.message)}
+    finally{btn.disabled=false;btn.textContent='⚡ Generate Cloud Short Link & QR'}
+   };
+  }
+
+  function viewUI(d){
+   const app=document.getElementById('app');
+   const shareUrl=location.href;
+   app.innerHTML='<div class="view-mode">'+
+    '<div class="stage" id="stage"></div>'+
+    '<div class="view-actions">'+
+     '<button class="btn-primary" style="width:auto" id="share">📤 Share This Card</button>'+
+     '<a class="btn-sec" style="padding:11px 16px" href="'+baseUrl()+'">➕ Create Your Own</a>'+
+    '</div>'+
+    '<p class="hint">Drag the card to rotate · auto-floats</p>'+
+   '</div>';
+   renderCard(d,document.getElementById('stage'),shareUrl);
+   document.getElementById('share').onclick=()=>{
+    if(navigator.share)navigator.share({title:(d.name||'Visiting Card'),url:shareUrl}).catch(()=>{});
+    else navigator.clipboard.writeText(shareUrl).then(()=>alert('Link copied!'));
+   };
+  }
+
+  async function boot(){
+   const code=detectCode();
+   if(code){
+    const app=document.getElementById('app');
+    app.innerHTML='<div class="loading">⚡ Loading card from cloud…</div>';
+    try{
+     const data=await loadFromCloud(code);
+     if(!data){
+      app.innerHTML='<div class="loading" style="color:#f88">Card not found.<br><small>This short link may have expired or never existed.</small><br><br><a class="btn-sec" style="padding:11px 16px;margin-top:14px" href="'+baseUrl()+'">← Create your own</a></div>';
+      return;
+     }
+     viewUI(data);
+    }catch(e){
+     app.innerHTML='<div class="loading" style="color:#f88">Error loading card: '+esc(e.message)+'<br><br><a class="btn-sec" style="padding:11px 16px" href="'+baseUrl()+'">← Builder</a></div>';
+    }
+    return;
+   }
+   builderUI();
+  }
+  boot();
+  window.addEventListener('hashchange',()=>location.reload());
+
+})();
+</script>
+</body>
+</html>
