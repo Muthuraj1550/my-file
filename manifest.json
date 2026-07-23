@@ -9,6 +9,19 @@
   ],
   "files": [
     {
+      "id": "ce3a13f5-5225-4677-9250-d2b03bfc58aa",
+      "project_id": "3a225cbd-6919-49b2-8fbf-baf939975f38",
+      "file_group_id": "90ad498a-daa1-4a36-ab84-830fb323883f",
+      "title": "power cut",
+      "description": null,
+      "version": 1,
+      "path": "files/3a225cbd-6919-49b2-8fbf-baf939975f38/90ad498a-daa1-4a36-ab84-830fb323883f/v1-index__3_.html",
+      "original_name": "index (3).html",
+      "mime_type": "text/html",
+      "size_bytes": 24255,
+      "created_at": "2026-07-23T10:48:49.250Z"
+    },
+    {
       "id": "03a4a0b2-67c7-4748-8a88-e2123de90a0f",
       "project_id": "3a225cbd-6919-49b2-8fbf-baf939975f38",
       "file_group_id": "98589616-0e8f-49bc-bd84-c182946841c6",
