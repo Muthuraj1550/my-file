@@ -51,6 +51,19 @@
   ],
   "files": [
     {
+      "id": "6a6575fc-65f7-434f-a5bf-201502832fcd",
+      "project_id": "6b17c3cc-d170-433c-bf4c-74d7b0570c85",
+      "file_group_id": "d1f26d52-c495-4dd3-9c70-c5db6ef601ad",
+      "title": "silence camatasia",
+      "description": null,
+      "version": 1,
+      "path": "files/6b17c3cc-d170-433c-bf4c-74d7b0570c85/d1f26d52-c495-4dd3-9c70-c5db6ef601ad/v1-ca.html",
+      "original_name": "ca.html",
+      "mime_type": "text/html",
+      "size_bytes": 51457,
+      "created_at": "2026-07-23T11:03:10.261Z"
+    },
+    {
       "id": "05688b1d-e81a-431b-9259-d54a672c6f6e",
       "project_id": "c2fa802f-f7ed-4e0c-9ce7-a13c52b7f2d6",
       "file_group_id": "ad3d61fe-5d0f-4fe9-bd17-c760f7ec661f",
