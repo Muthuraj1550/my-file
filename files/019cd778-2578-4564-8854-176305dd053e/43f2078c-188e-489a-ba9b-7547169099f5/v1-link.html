@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.card { background: #1e293b; border-radius: 16px; padding: 28px; width: 100%; max-width: 600px; border: 1px solid #334155; }
+h2 { color: #38bdf8; font-size: 18px; margin-bottom: 6px; }
+p { color: #64748b; font-size: 12px; margin-bottom: 20px; }
+label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
+input, textarea { width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 13px; padding: 10px 12px; outline: none; transition: border .2s; }
+input:focus, textarea:focus { border-color: #38bdf8; }
+.row { margin-bottom: 16px; }
+.result-box { background: #020617; border: 1px solid #1e3a5f; border-radius: 8px; padding: 12px; font-size: 12px; color: #7dd3fc; word-break: break-all; min-height: 48px; margin-bottom: 12px; cursor: pointer; }
+.btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all .2s; }
+.btn-copy { background: #0369a1; color: #fff; }
+.btn-copy:hover { background: #0284c7; }
+.btn-copied { background: #052e16; color: #4ade80; border: 1px solid #16a34a; }
+.note { font-size: 11px; color: #475569; margin-top: 12px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>🔗 Project Deep Link Generator</h2>
+  <p>Editor URL + XML GitHub Raw URL → Share Link உருவாக்கவும்</p>
+
+  <div class="row">
+    <label>🖥️ Editor Page URL</label>
+    <input type="text" id="editorUrl" value="https://my3dgifts.com/3d/zaxscdvf%20bgnhmj%20qaws%20ed%20rftg%20yh%20uj%20ikol%20p%20my%203d%20pro%20owner%20my%203d%20gifts.html" placeholder="https://yoursite.com/editor.html" oninput="generate()">
+  </div>
+
+  <div class="row">
+    <label>📄 GitHub Raw XML URL</label>
+    <input type="text" id="xmlUrl" value="https://raw.githubusercontent.com/Muthuraj1550/3d/main/TVK%20TEMP%20LOGO.xml" placeholder="https://raw.githubusercontent.com/..." oninput="generate()">
+  </div>
+
+  <label>✅ Generated Share Link (click to copy)</label>
+  <div class="result-box" id="result" onclick="copyLink()">—</div>
+  <button class="btn btn-copy" id="copyBtn" onclick="copyLink()">📋 Copy Link</button>
+
+  <p class="note">இந்த link யாரிடமும் share செய்தால் — அவர் browser-ல் open செய்தவுடன் editor automatically அந்த XML project-ஐ load செய்யும்</p>
+</div>
+
+<script>
+function generate() {
+  var editor = document.getElementById('editorUrl').value.trim();
+  var xml = document.getElementById('xmlUrl').value.trim();
+  var box = document.getElementById('result');
+  if (!editor || !xml) { box.textContent = '—'; return; }
+  var link = editor + '?load_xml=' + encodeURIComponent(xml);
+  box.textContent = link;
+}
+
+function copyLink() {
+  var text = document.getElementById('result').textContent;
+  if (!text || text === '—') return;
+  var btn = document.getElementById('copyBtn');
+  navigator.clipboard.writeText(text).then(function() {
+    btn.textContent = '✅ Copied!';
+    btn.className = 'btn btn-copied';
+    setTimeout(function() {
+      btn.textContent = '📋 Copy Link';
+      btn.className = 'btn btn-copy';
+    }, 2500);
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✅ Copied!';
+    setTimeout(function() { btn.textContent = '📋 Copy Link'; }, 2500);
+  });
+}
+
+generate();
+</script>
+</body>
+</html>
