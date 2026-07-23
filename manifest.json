@@ -27,6 +27,19 @@
   ],
   "files": [
     {
+      "id": "d86daaa8-1d50-45d6-bc26-ff6ae044b50f",
+      "project_id": "d847674c-148c-4235-b2d8-b66c78bf3a20",
+      "file_group_id": "ca341b78-ffcb-436c-b37e-f51c9875653c",
+      "title": "lithophane",
+      "description": null,
+      "version": 1,
+      "path": "files/d847674c-148c-4235-b2d8-b66c78bf3a20/ca341b78-ffcb-436c-b37e-f51c9875653c/v1-lithophane_v15_postwriter.zip",
+      "original_name": "lithophane_v15_postwriter.zip",
+      "mime_type": "application/x-zip-compressed",
+      "size_bytes": 118574,
+      "created_at": "2026-07-23T10:53:50.031Z"
+    },
+    {
       "id": "ce3a13f5-5225-4677-9250-d2b03bfc58aa",
       "project_id": "3a225cbd-6919-49b2-8fbf-baf939975f38",
       "file_group_id": "90ad498a-daa1-4a36-ab84-830fb323883f",
