@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tool Lab Builder — My 3D Gifts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --m3g-teal:#166F63; --m3g-teal-bg:#E4F2EF;
+    --m3g-coral:#C1502E; --m3g-coral-bg:#F8E9E3;
+    --m3g-ink:#22221D; --m3g-muted:#6C6A61;
+    --m3g-line:#E2DECF; --m3g-card:#FFFFFF; --m3g-page:#F7F5EF;
+    --m3g-gold:#B8862E; --m3g-gold-bg:#FBF1DE;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:var(--m3g-page); color:var(--m3g-ink);
+    background-image:radial-gradient(circle,#DEDACB 1px,transparent 1px);
+    background-size:22px 22px;
+  }
+  .m3g-shell{max-width:1100px;margin:0 auto;padding:32px 20px 70px;}
+
+  /* ---------- Admin panel ---------- */
+  .m3g-admin{
+    background:var(--m3g-card); border:1px solid var(--m3g-line); border-radius:14px;
+    padding:22px; margin-bottom:30px;
+  }
+  .m3g-admin h3{
+    font-family:'Space Grotesk',sans-serif; font-size:16px; margin:0 0 4px;
+  }
+  .m3g-admin p.hint{color:var(--m3g-muted); font-size:13px; margin:0 0 18px;}
+  .m3g-formgrid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px;
+  }
+  .m3g-field label{
+    display:block; font-family:'Space Grotesk',monospace; font-size:11px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--m3g-muted); margin-bottom:6px; font-weight:600;
+  }
+  .m3g-field input[type=text], .m3g-field textarea, .m3g-field select{
+    width:100%; border:1px solid var(--m3g-line); border-radius:8px; padding:9px 11px;
+    font-family:inherit; font-size:14px; background:#FCFBF7; color:var(--m3g-ink);
+  }
+  .m3g-field textarea{resize:vertical; min-height:44px;}
+  .m3g-field.full{grid-column:1/-1;}
+  .m3g-checkrow{display:flex; align-items:center; gap:8px; margin-top:26px;}
+  .m3g-checkrow input{width:16px;height:16px;}
+  .m3g-checkrow label{font-size:13.5px; font-weight:600; color:var(--m3g-ink); margin:0;}
+  .m3g-actions{display:flex; gap:10px; margin-top:18px; flex-wrap:wrap;}
+  .m3g-btn{
+    font-family:'Space Grotesk',monospace; font-size:13px; font-weight:600;
+    border-radius:8px; padding:10px 18px; cursor:pointer; border:1px solid var(--m3g-line);
+    background:#fff; color:var(--m3g-ink); transition:.15s;
+  }
+  .m3g-btn.primary{background:var(--m3g-teal); color:#fff; border-color:var(--m3g-teal);}
+  .m3g-btn.primary:hover{background:#125a50;}
+  .m3g-btn.ghost:hover{background:#f0efe8;}
+  .m3g-btn.danger{color:var(--m3g-coral); border-color:var(--m3g-coral-bg);}
+  .m3g-btn.danger:hover{background:var(--m3g-coral-bg);}
+
+  /* ---------- Toolbar: search + lang ---------- */
+  .m3g-toolbar{
+    display:flex; align-items:center; gap:14px; justify-content:space-between;
+    max-width:1040px; margin:0 auto 26px; flex-wrap:wrap;
+  }
+  .m3g-search{
+    position:relative; flex:1; min-width:220px; max-width:420px;
+  }
+  .m3g-search input{
+    width:100%; padding:11px 14px 11px 38px; border-radius:22px; border:1px solid var(--m3g-line);
+    background:#fff; font-size:14px; font-family:inherit; color:var(--m3g-ink);
+  }
+  .m3g-search input:focus{outline:2px solid var(--m3g-teal); outline-offset:1px;}
+  .m3g-search .ic{
+    position:absolute; left:13px; top:50%; transform:translateY(-50%); font-size:14px; color:var(--m3g-muted);
+  }
+  .m3g-langtoggle{
+    display:flex; border:1px solid var(--m3g-line); border-radius:20px; overflow:hidden; background:var(--m3g-card);
+  }
+  .m3g-langtoggle button{
+    font-family:'Space Grotesk',monospace; font-size:12px; font-weight:600; letter-spacing:.04em;
+    border:none; background:transparent; color:var(--m3g-muted); padding:8px 14px; cursor:pointer;
+  }
+  .m3g-langtoggle button.active{background:var(--m3g-teal); color:#fff;}
+  .m3g-count{font-size:12.5px; color:var(--m3g-muted); font-family:'Space Grotesk',monospace;}
+
+  /* ---------- Head ---------- */
+  .m3g-head{max-width:760px;margin:0 auto 30px;text-align:center;}
+  .m3g-eyebrow{
+    font-family:'Space Grotesk',monospace;font-size:12.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--m3g-teal);font-weight:600;margin:0 0 10px;
+  }
+  .m3g-title{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;
+    font-size:clamp(24px,4vw,34px);line-height:1.2;margin:0 0 10px;
+  }
+  .m3g-sub{color:var(--m3g-muted);font-size:15px;line-height:1.6;margin:0;}
+
+  /* ---------- Grid / cards ---------- */
+  .m3g-grid{
+    max-width:1040px;margin:0 auto;display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;
+  }
+  .m3g-card{
+    background:var(--m3g-card);border:1px solid var(--m3g-line);border-radius:14px;
+    padding:22px 20px 20px;position:relative;overflow:hidden;
+    transition:transform .18s ease, box-shadow .18s ease;
+    display:flex;flex-direction:column;
+  }
+  .m3g-card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(34,34,29,.08);}
+  .m3g-card.featured{
+    border-color:var(--m3g-gold); box-shadow:0 0 0 1px var(--m3g-gold), 0 10px 24px rgba(184,134,46,.15);
+  }
+  .m3g-star-badge{
+    position:absolute; top:14px; right:16px; font-size:12px; font-family:'Space Grotesk',monospace;
+    font-weight:600; color:var(--m3g-gold); background:var(--m3g-gold-bg); padding:3px 9px 3px 7px;
+    border-radius:12px; letter-spacing:.03em;
+  }
+  .m3g-layerline{
+    position:absolute;top:0;left:0;right:0;height:6px;
+    background-repeat:repeat-x;background-size:10px 100%;
+  }
+  .m3g-layerline.teal{background-image:linear-gradient(90deg,var(--m3g-teal) 0 60%,transparent 60% 100%);}
+  .m3g-layerline.coral{background-image:linear-gradient(90deg,var(--m3g-coral) 0 60%,transparent 60% 100%);}
+  .m3g-layerline.gold{background-image:linear-gradient(90deg,var(--m3g-gold) 0 60%,transparent 60% 100%);}
+  .m3g-icon{
+    width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:22px;margin:6px 0 14px;
+  }
+  .m3g-icon.teal{background:var(--m3g-teal-bg);}
+  .m3g-icon.coral{background:var(--m3g-coral-bg);}
+  .m3g-tag{
+    font-family:'Space Grotesk',monospace;font-size:11px;letter-spacing:.08em;
+    text-transform:uppercase;font-weight:600;margin:0 0 6px;
+  }
+  .m3g-tag.teal{color:var(--m3g-teal);}
+  .m3g-tag.coral{color:var(--m3g-coral);}
+  .m3g-name{font-size:17px;font-weight:600;margin:0 0 6px;}
+  .m3g-desc{font-size:14px;color:var(--m3g-muted);line-height:1.55;margin:0 0 18px;flex-grow:1;}
+  .m3g-cardfoot{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .m3g-link{
+    font-size:13.5px;font-weight:600;text-decoration:none;
+    padding:9px 16px;border-radius:8px;border:1px solid var(--m3g-line);
+    color:var(--m3g-ink);transition:background .15s ease;
+  }
+  .m3g-link.teal:hover{background:var(--m3g-teal-bg);border-color:var(--m3g-teal);color:var(--m3g-teal);}
+  .m3g-link.coral:hover{background:var(--m3g-coral-bg);border-color:var(--m3g-coral);color:var(--m3g-coral);}
+  .m3g-cardadmin{display:flex; gap:6px;}
+  .m3g-iconbtn{
+    border:1px solid var(--m3g-line); background:#fff; border-radius:7px; width:30px; height:30px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px;
+  }
+  .m3g-iconbtn:hover{background:#f0efe8;}
+  .m3g-iconbtn.on{background:var(--m3g-gold-bg); border-color:var(--m3g-gold); color:var(--m3g-gold);}
+  .m3g-empty{
+    max-width:1040px; margin:40px auto; text-align:center; color:var(--m3g-muted); font-size:14px;
+  }
+
+  /* ---------- Export modal ---------- */
+  .m3g-modal-bg{
+    position:fixed; inset:0; background:rgba(34,34,29,.55); display:none;
+    align-items:center; justify-content:center; padding:20px; z-index:50;
+  }
+  .m3g-modal-bg.open{display:flex;}
+  .m3g-modal{
+    background:#fff; border-radius:14px; max-width:720px; width:100%; max-height:82vh;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  .m3g-modal-head{
+    padding:18px 22px; border-bottom:1px solid var(--m3g-line); display:flex; justify-content:space-between; align-items:center;
+  }
+  .m3g-modal-head h3{margin:0; font-family:'Space Grotesk',sans-serif; font-size:16px;}
+  .m3g-modal-close{border:none; background:none; font-size:20px; cursor:pointer; color:var(--m3g-muted); line-height:1;}
+  .m3g-modal-body{padding:18px 22px; overflow:auto;}
+  .m3g-modal-body textarea{
+    width:100%; height:340px; font-family:'Space Grotesk',monospace; font-size:12px;
+    border:1px solid var(--m3g-line); border-radius:8px; padding:12px; background:#FCFBF7; color:var(--m3g-ink);
+  }
+  .m3g-modal-foot{padding:14px 22px; border-top:1px solid var(--m3g-line); display:flex; justify-content:flex-end; gap:10px;}
+
+  @media (max-width:480px){
+    .m3g-shell{padding:20px 14px 50px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="m3g-shell">
+
+  <!-- ===================== ADMIN: Add / Edit Tool ===================== -->
+  <div class="m3g-admin">
+    <h3 id="formTitle">➕ Add a new tool</h3>
+    <p class="hint">Fill this and hit "Add Tool" — it appears below instantly. Highlight ⭐ up to 3 tools to feature them. When done, click "Export HTML" to get the final code for your site.</p>
+    <div class="m3g-formgrid">
+      <div class="m3g-field">
+        <label>Tool Name</label>
+        <input type="text" id="f-name" placeholder="e.g. STL Repair Tool">
+      </div>
+      <div class="m3g-field">
+        <label>Icon (emoji)</label>
+        <input type="text" id="f-icon" placeholder="🛠️" maxlength="4">
+      </div>
+      <div class="m3g-field">
+        <label>Link URL</label>
+        <input type="text" id="f-link" placeholder="https://my3dgifts.com/...">
+      </div>
+      <div class="m3g-field">
+        <label>Color theme</label>
+        <select id="f-color">
+          <option value="teal">Teal</option>
+          <option value="coral">Coral</option>
+        </select>
+      </div>
+      <div class="m3g-field">
+        <label>Category (English)</label>
+        <input type="text" id="f-tag-en" placeholder="e.g. Generator / Editor / Calculator">
+      </div>
+      <div class="m3g-field">
+        <label>Category (Tamil)</label>
+        <input type="text" id="f-tag-ta" placeholder="e.g. ஜெனரேட்டர்">
+      </div>
+      <div class="m3g-field full">
+        <label>Description (English)</label>
+        <textarea id="f-desc-en" placeholder="Short one-line description in English"></textarea>
+      </div>
+      <div class="m3g-field full">
+        <label>Description (Tamil)</label>
+        <textarea id="f-desc-ta" placeholder="தமிழில் ஒரு வரி விளக்கம்"></textarea>
+      </div>
+      <div class="m3g-checkrow">
+        <input type="checkbox" id="f-highlight">
+        <label for="f-highlight">⭐ Highlight this tool (max 3)</label>
+      </div>
+    </div>
+    <div class="m3g-actions">
+      <button class="m3g-btn primary" id="btnSave">Add Tool</button>
+      <button class="m3g-btn ghost" id="btnCancelEdit" style="display:none;">Cancel edit</button>
+      <button class="m3g-btn ghost" id="btnExport">⇩ Export HTML</button>
+    </div>
+  </div>
+
+  <!-- ===================== Public header ===================== -->
+  <div class="m3g-head">
+    <p class="m3g-eyebrow" data-en="My 3D Gifts / Tool Lab" data-ta="மை 3டி கிஃப்ட்ஸ் / டூல் லேப்">My 3D Gifts / Tool Lab</p>
+    <h2 class="m3g-title" data-en="Tools for your 3D printing work" data-ta="உங்கள் 3D பிரிண்ட் பணிக்கான டூல்ஸ்">Tools for your 3D printing work</h2>
+    <p class="m3g-sub" data-en="From lithophanes to QR designs — free online tools we built for makers." data-ta="லித்தோஃபேன் முதல் கியூஆர் டிசைன் வரை — நாங்கள் உருவாக்கிய இலவச ஆன்லைன் டூல்ஸ் இங்கே.">From lithophanes to QR designs — free online tools we built for makers.</p>
+  </div>
+
+  <!-- ===================== Toolbar: search + lang ===================== -->
+  <div class="m3g-toolbar">
+    <div class="m3g-search">
+      <span class="ic">🔍</span>
+      <input type="text" id="searchBox" placeholder="Search tools...">
+    </div>
+    <div style="display:flex; align-items:center; gap:14px;">
+      <span class="m3g-count" id="resultCount"></span>
+      <div class="m3g-langtoggle">
+        <button type="button" class="active" data-lang="en">EN</button>
+        <button type="button" data-lang="ta">தமிழ்</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="m3g-grid" id="toolGrid"></div>
+  <p class="m3g-empty" id="emptyMsg" style="display:none;">No tools match your search.</p>
+</div>
+
+<!-- ===================== Export modal ===================== -->
+<div class="m3g-modal-bg" id="exportModal">
+  <div class="m3g-modal">
+    <div class="m3g-modal-head">
+      <h3>Clean embeddable HTML</h3>
+      <button class="m3g-modal-close" id="closeModal">&times;</button>
+    </div>
+    <div class="m3g-modal-body">
+      <p style="font-size:13px;color:var(--m3g-muted);margin-top:0;">Copy everything below and paste it into your site (no admin controls included). Includes search box and language toggle.</p>
+      <textarea id="exportBox" readonly></textarea>
+    </div>
+    <div class="m3g-modal-foot">
+      <button class="m3g-btn ghost" id="closeModal2">Close</button>
+      <button class="m3g-btn primary" id="copyBtn">Copy code</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var lang = 'en';
+  var editingId = null;
+
+  var tools = [
+    {id:1, name:"Lithophane Tool", icon:"🖼️", color:"teal", link:"https://litho.my3dgifts.com/",
+      tagEn:"Generator", tagTa:"ஜெனரேட்டர்",
+      descEn:"Turn your photo into a 3D-printable lithophane model.",
+      descTa:"உங்கள் புகைப்படத்தை 3D பிரிண்ட் செய்யக்கூடிய லித்தோஃபேன் மாடலாக மாற்றுங்கள்.",
+      featured:true},
+    {id:2, name:"Cutter — Part Splitter", icon:"✂️", color:"coral", link:"https://my3dgifts.com/3d/cutter.html",
+      tagEn:"Editor", tagTa:"எடிட்டர்",
+      descEn:"Split a large 3D model into parts, joined with connectors.",
+      descTa:"பெரிய 3D மாடலை பாகங்களாக பிரித்து, கனெக்டர் உடன் இணைக்க உதவும் டூல்.",
+      featured:true},
+    {id:3, name:"Timelapse Video Editor", icon:"🎬", color:"teal", link:"https://my3dgifts.com/3d-print-timelapse-video-editor/",
+      tagEn:"Editor", tagTa:"எடிட்டர்",
+      descEn:"Edit and prepare your 3D print timelapse videos.",
+      descTa:"உங்கள் 3D பிரிண்ட் டைம்லேப்ஸ் வீடியோக்களை எடிட் செய்து தயார் செய்யுங்கள்.",
+      featured:false},
+    {id:4, name:"Support Generator", icon:"🧱", color:"coral", link:"https://my3dgifts.com/3d-print-support-generator/",
+      tagEn:"Generator", tagTa:"ஜெனரேட்டர்",
+      descEn:"Automatically generates the support structure your model needs.",
+      descTa:"உங்கள் 3D மாடலுக்கு தேவையான சப்போர்ட் ஸ்ட்ரக்சரை தானாக உருவாக்கும்.",
+      featured:false},
+    {id:5, name:"3D Print Cost Estimator", icon:"💰", color:"teal", link:"https://my3dgifts.com/3d-print-model-printing-cost-estimate/",
+      tagEn:"Calculator", tagTa:"கால்குலேட்டர்",
+      descEn:"Estimate print cost based on filament, time and electricity.",
+      descTa:"பிலமெண்ட், நேரம், மின்சாரம் அடிப்படையில் பிரிண்ட் செலவை கணக்கிடுங்கள்.",
+      featured:true},
+    {id:6, name:"QR Code Design", icon:"🔳", color:"coral", link:"https://my3dgifts.com/qr.html",
+      tagEn:"Designer", tagTa:"டிசைனர்",
+      descEn:"Design a scannable QR code that can be 3D printed.",
+      descTa:"3D பிரிண்ட் செய்யக்கூடிய, ஸ்கேன் ஆகக்கூடிய கியூஆர் கோட் டிசைன் செய்யுங்கள்.",
+      featured:false}
+  ];
+  var nextId = 7;
+
+  var grid = document.getElementById('toolGrid');
+  var searchBox = document.getElementById('searchBox');
+  var emptyMsg = document.getElementById('emptyMsg');
+  var resultCount = document.getElementById('resultCount');
+
+  function escapeHtml(s){
+    return (s||'').replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function featuredCount(excludeId){
+    return tools.filter(function(t){ return t.featured && t.id !== excludeId; }).length;
+  }
+
+  function render(){
+    var q = (searchBox.value || '').trim().toLowerCase();
+    var filtered = tools.filter(function(t){
+      if(!q) return true;
+      var hay = (t.name+' '+t.descEn+' '+t.descTa+' '+t.tagEn+' '+t.tagTa).toLowerCase();
+      return hay.indexOf(q) !== -1;
+    });
+    // featured first
+    filtered.sort(function(a,b){ return (b.featured?1:0) - (a.featured?1:0); });
+
+    resultCount.textContent = filtered.length + (lang==='ta' ? ' டூல்ஸ்' : ' tool(s)');
+    grid.innerHTML = '';
+    emptyMsg.style.display = filtered.length ? 'none' : 'block';
+
+    filtered.forEach(function(t){
+      var card = document.createElement('div');
+      card.className = 'm3g-card' + (t.featured ? ' featured' : '');
+      var lineClass = t.featured ? 'gold' : t.color;
+      var desc = lang==='ta' ? t.descTa : t.descEn;
+      var tag = lang==='ta' ? t.tagTa : t.tagEn;
+      var linkLabel = lang==='ta' ? 'Tool-ஐ திற' : 'Open tool';
+
+      card.innerHTML =
+        '<div class="m3g-layerline '+lineClass+'"></div>' +
+        (t.featured ? '<span class="m3g-star-badge">⭐ '+(lang==='ta'?'சிறப்பு':'Featured')+'</span>' : '') +
+        '<div class="m3g-icon '+t.color+'">'+t.icon+'</div>' +
+        '<p class="m3g-tag '+t.color+'">'+escapeHtml(tag)+'</p>' +
+        '<h3 class="m3g-name">'+escapeHtml(t.name)+'</h3>' +
+        '<p class="m3g-desc">'+escapeHtml(desc)+'</p>' +
+        '<div class="m3g-cardfoot">' +
+          '<a class="m3g-link '+t.color+'" href="'+escapeHtml(t.link)+'" target="_blank" rel="noopener">'+linkLabel+' →</a>' +
+          '<div class="m3g-cardadmin">' +
+            '<button class="m3g-iconbtn star '+(t.featured?'on':'')+'" data-id="'+t.id+'" title="Toggle highlight">⭐</button>' +
+            '<button class="m3g-iconbtn edit" data-id="'+t.id+'" title="Edit">✎</button>' +
+            '<button class="m3g-iconbtn del" data-id="'+t.id+'" title="Delete">🗑</button>' +
+          '</div>' +
+        '</div>';
+      grid.appendChild(card);
+    });
+
+    grid.querySelectorAll('.star').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = parseInt(btn.getAttribute('data-id'),10);
+        var t = tools.find(function(x){return x.id===id;});
+        if(!t.featured && featuredCount() >= 3){
+          alert(lang==='ta' ? 'அதிகபட்சம் 3 tools மட்டுமே highlight செய்ய முடியும்.' : 'You can highlight a maximum of 3 tools.');
+          return;
+        }
+        t.featured = !t.featured;
+        render();
+      });
+    });
+    grid.querySelectorAll('.edit').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        loadIntoForm(parseInt(btn.getAttribute('data-id'),10));
+      });
+    });
+    grid.querySelectorAll('.del').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = parseInt(btn.getAttribute('data-id'),10);
+        if(confirm(lang==='ta' ? 'இந்த tool-ஐ நீக்கவா?' : 'Delete this tool?')){
+          tools = tools.filter(function(x){return x.id!==id;});
+          render();
+        }
+      });
+    });
+  }
+
+  function loadIntoForm(id){
+    var t = tools.find(function(x){return x.id===id;});
+    if(!t) return;
+    editingId = id;
+    document.getElementById('formTitle').textContent = '✎ Edit tool';
+    document.getElementById('f-name').value = t.name;
+    document.getElementById('f-icon').value = t.icon;
+    document.getElementById('f-link').value = t.link;
+    document.getElementById('f-color').value = t.color;
+    document.getElementById('f-tag-en').value = t.tagEn;
+    document.getElementById('f-tag-ta').value = t.tagTa;
+    document.getElementById('f-desc-en').value = t.descEn;
+    document.getElementById('f-desc-ta').value = t.descTa;
+    document.getElementById('f-highlight').checked = t.featured;
+    document.getElementById('btnSave').textContent = 'Save changes';
+    document.getElementById('btnCancelEdit').style.display = 'inline-block';
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  function clearForm(){
+    editingId = null;
+    ['f-name','f-icon','f-link','f-tag-en','f-tag-ta','f-desc-en','f-desc-ta'].forEach(function(id){
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('f-color').value = 'teal';
+    document.getElementById('f-highlight').checked = false;
+    document.getElementById('formTitle').textContent = '➕ Add a new tool';
+    document.getElementById('btnSave').textContent = 'Add Tool';
+    document.getElementById('btnCancelEdit').style.display = 'none';
+  }
+
+  document.getElementById('btnSave').addEventListener('click', function(){
+    var name = document.getElementById('f-name').value.trim();
+    var link = document.getElementById('f-link').value.trim();
+    if(!name || !link){
+      alert(lang==='ta' ? 'Tool பெயரும் லிங்கும் அவசியம்.' : 'Tool name and link are required.');
+      return;
+    }
+    var icon = document.getElementById('f-icon').value.trim() || '🛠️';
+    var color = document.getElementById('f-color').value;
+    var tagEn = document.getElementById('f-tag-en').value.trim() || 'Tool';
+    var tagTa = document.getElementById('f-tag-ta').value.trim() || 'டூல்';
+    var descEn = document.getElementById('f-desc-en').value.trim();
+    var descTa = document.getElementById('f-desc-ta').value.trim() || descEn;
+    var highlight = document.getElementById('f-highlight').checked;
+
+    if(highlight && featuredCount(editingId) >= 3){
+      alert(lang==='ta' ? 'அதிகபட்சம் 3 tools மட்டுமே highlight செய்ய முடியும். வேறு ஒன்றை முதலில் unhighlight செய்யவும்.' : 'Max 3 tools can be highlighted. Unhighlight another one first.');
+      return;
+    }
+
+    if(editingId){
+      var t = tools.find(function(x){return x.id===editingId;});
+      Object.assign(t, {name:name, icon:icon, color:color, link:link, tagEn:tagEn, tagTa:tagTa, descEn:descEn, descTa:descTa, featured:highlight});
+    } else {
+      tools.push({id:nextId++, name:name, icon:icon, color:color, link:link, tagEn:tagEn, tagTa:tagTa, descEn:descEn, descTa:descTa, featured:highlight});
+    }
+    clearForm();
+    render();
+  });
+
+  document.getElementById('btnCancelEdit').addEventListener('click', clearForm);
+
+  searchBox.addEventListener('input', render);
+
+  document.querySelectorAll('.m3g-langtoggle button').forEach(function(b){
+    b.addEventListener('click', function(){
+      lang = b.getAttribute('data-lang');
+      document.querySelectorAll('.m3g-langtoggle button').forEach(function(x){x.classList.remove('active');});
+      b.classList.add('active');
+      document.querySelectorAll('[data-en]').forEach(function(el){
+        var text = el.getAttribute('data-'+lang);
+        if(text!==null) el.textContent = text;
+      });
+      render();
+    });
+  });
+
+  // -------- Export --------
+  function buildExportHtml(){
+    var cardsHtml = tools.map(function(t){
+      var lineClass = t.featured ? 'gold' : t.color;
+      return (
+'    <div class="m3g-card'+(t.featured?' featured':'')+'">\n' +
+'      <div class="m3g-layerline '+lineClass+'"></div>\n' +
+(t.featured ? '      <span class="m3g-star-badge" data-en="⭐ Featured" data-ta="⭐ சிறப்பு">⭐ Featured</span>\n' : '') +
+'      <div class="m3g-icon '+t.color+'">'+t.icon+'</div>\n' +
+'      <p class="m3g-tag '+t.color+'" data-en="'+escapeHtml(t.tagEn)+'" data-ta="'+escapeHtml(t.tagTa)+'">'+escapeHtml(t.tagEn)+'</p>\n' +
+'      <h3 class="m3g-name">'+escapeHtml(t.name)+'</h3>\n' +
+'      <p class="m3g-desc" data-en="'+escapeHtml(t.descEn)+'" data-ta="'+escapeHtml(t.descTa)+'">'+escapeHtml(t.descEn)+'</p>\n' +
+'      <a class="m3g-link '+t.color+'" href="'+escapeHtml(t.link)+'" target="_blank" rel="noopener">\n' +
+'        <span data-en="Open tool" data-ta="Tool-ஐ திற">Open tool</span> →\n' +
+'      </a>\n' +
+'    </div>'
+      );
+    }).join('\n');
+
+    return (
+'<style>\n' +
+'  .m3g-tools-wrap{\n' +
+'    --m3g-teal:#166F63; --m3g-teal-bg:#E4F2EF;\n' +
+'    --m3g-coral:#C1502E; --m3g-coral-bg:#F8E9E3;\n' +
+'    --m3g-gold:#B8862E; --m3g-gold-bg:#FBF1DE;\n' +
+'    --m3g-ink:#22221D; --m3g-muted:#6C6A61;\n' +
+'    --m3g-line:#E2DECF; --m3g-card:#FFFFFF; --m3g-page:#F7F5EF;\n' +
+'    font-family:\'Inter\',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;\n' +
+'    background:var(--m3g-page);\n' +
+'    background-image:radial-gradient(circle,#DEDACB 1px,transparent 1px);\n' +
+'    background-size:22px 22px;\n' +
+'    padding:48px 20px 56px; border-radius:14px; color:var(--m3g-ink); position:relative;\n' +
+'  }\n' +
+'  .m3g-tools-wrap *{box-sizing:border-box;}\n' +
+'  .m3g-toolbar{max-width:1040px;margin:0 auto 26px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}\n' +
+'  .m3g-search{position:relative;flex:1;min-width:220px;max-width:420px;}\n' +
+'  .m3g-search input{width:100%;padding:11px 14px 11px 38px;border-radius:22px;border:1px solid var(--m3g-line);background:#fff;font-size:14px;font-family:inherit;color:var(--m3g-ink);}\n' +
+'  .m3g-search .ic{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--m3g-muted);}\n' +
+'  .m3g-langtoggle{position:static;display:flex;border:1px solid var(--m3g-line);border-radius:20px;overflow:hidden;background:var(--m3g-card);}\n' +
+'  .m3g-langtoggle button{font-family:\'Space Grotesk\',monospace;font-size:12px;font-weight:600;letter-spacing:.04em;border:none;background:transparent;color:var(--m3g-muted);padding:7px 14px;cursor:pointer;transition:background .15s ease,color .15s ease;}\n' +
+'  .m3g-langtoggle button.active{background:var(--m3g-teal);color:#fff;}\n' +
+'  .m3g-head{max-width:760px;margin:0 auto 36px;text-align:center;}\n' +
+'  .m3g-eyebrow{font-family:\'Space Grotesk\',monospace;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--m3g-teal);font-weight:600;margin:0 0 10px;}\n' +
+'  .m3g-title{font-family:\'Space Grotesk\',sans-serif;font-weight:600;font-size:clamp(26px,4vw,36px);line-height:1.2;margin:0 0 10px;}\n' +
+'  .m3g-sub{color:var(--m3g-muted);font-size:15.5px;line-height:1.6;margin:0;}\n' +
+'  .m3g-grid{max-width:1040px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;}\n' +
+'  .m3g-card{background:var(--m3g-card);border:1px solid var(--m3g-line);border-radius:14px;padding:22px 20px 20px;position:relative;overflow:hidden;transition:transform .18s ease, box-shadow .18s ease;display:flex;flex-direction:column;}\n' +
+'  .m3g-card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(34,34,29,.08);}\n' +
+'  .m3g-card.featured{border-color:var(--m3g-gold);box-shadow:0 0 0 1px var(--m3g-gold),0 10px 24px rgba(184,134,46,.15);}\n' +
+'  .m3g-star-badge{position:absolute;top:14px;right:16px;font-size:12px;font-family:\'Space Grotesk\',monospace;font-weight:600;color:var(--m3g-gold);background:var(--m3g-gold-bg);padding:3px 9px 3px 7px;border-radius:12px;letter-spacing:.03em;}\n' +
+'  .m3g-layerline{position:absolute;top:0;left:0;right:0;height:6px;background-repeat:repeat-x;background-size:10px 100%;}\n' +
+'  .m3g-layerline.teal{background-image:linear-gradient(90deg,var(--m3g-teal) 0 60%,transparent 60% 100%);}\n' +
+'  .m3g-layerline.coral{background-image:linear-gradient(90deg,var(--m3g-coral) 0 60%,transparent 60% 100%);}\n' +
+'  .m3g-layerline.gold{background-image:linear-gradient(90deg,var(--m3g-gold) 0 60%,transparent 60% 100%);}\n' +
+'  .m3g-icon{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;margin:6px 0 14px;}\n' +
+'  .m3g-icon.teal{background:var(--m3g-teal-bg);} .m3g-icon.coral{background:var(--m3g-coral-bg);}\n' +
+'  .m3g-tag{font-family:\'Space Grotesk\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;margin:0 0 6px;}\n' +
+'  .m3g-tag.teal{color:var(--m3g-teal);} .m3g-tag.coral{color:var(--m3g-coral);}\n' +
+'  .m3g-name{font-size:17px;font-weight:600;margin:0 0 6px;}\n' +
+'  .m3g-desc{font-size:14px;color:var(--m3g-muted);line-height:1.55;margin:0 0 18px;flex-grow:1;}\n' +
+'  .m3g-link{align-self:flex-start;font-size:13.5px;font-weight:600;text-decoration:none;padding:9px 16px;border-radius:8px;border:1px solid var(--m3g-line);color:var(--m3g-ink);transition:background .15s ease;}\n' +
+'  .m3g-link.teal:hover{background:var(--m3g-teal-bg);border-color:var(--m3g-teal);color:var(--m3g-teal);}\n' +
+'  .m3g-link.coral:hover{background:var(--m3g-coral-bg);border-color:var(--m3g-coral);color:var(--m3g-coral);}\n' +
+'  .m3g-empty{max-width:1040px;margin:30px auto 0;text-align:center;color:var(--m3g-muted);font-size:14px;}\n' +
+'  @media (max-width:480px){ .m3g-tools-wrap{padding:64px 14px 40px;} }\n' +
+'</style>\n\n' +
+'<div class="m3g-tools-wrap" id="m3gWrap">\n\n' +
+'  <div class="m3g-head">\n' +
+'    <p class="m3g-eyebrow" data-en="My 3D Gifts / Tool Lab" data-ta="மை 3டி கிஃப்ட்ஸ் / டூல் லேப்">My 3D Gifts / Tool Lab</p>\n' +
+'    <h2 class="m3g-title" data-en="Tools for your 3D printing work" data-ta="உங்கள் 3D பிரிண்ட் பணிக்கான டூல்ஸ்">Tools for your 3D printing work</h2>\n' +
+'    <p class="m3g-sub" data-en="From lithophanes to QR designs — free online tools we built for makers." data-ta="லித்தோஃபேன் முதல் கியூஆர் டிசைன் வரை — நாங்கள் உருவாக்கிய இலவச ஆன்லைன் டூல்ஸ் இங்கே.">From lithophanes to QR designs — free online tools we built for makers.</p>\n' +
+'  </div>\n\n' +
+'  <div class="m3g-toolbar">\n' +
+'    <div class="m3g-search">\n' +
+'      <span class="ic">🔍</span>\n' +
+'      <input type="text" id="m3gSearchBox" placeholder="Search tools...">\n' +
+'    </div>\n' +
+'    <div class="m3g-langtoggle">\n' +
+'      <button type="button" class="active" data-lang="en">EN</button>\n' +
+'      <button type="button" data-lang="ta">தமிழ்</button>\n' +
+'    </div>\n' +
+'  </div>\n\n' +
+'  <div class="m3g-grid" id="m3gGrid">\n' +
+cardsHtml + '\n' +
+'  </div>\n' +
+'  <p class="m3g-empty" id="m3gEmpty" style="display:none;">No tools match your search.</p>\n' +
+'</div>\n\n' +
+'<' + 'script>\n' +
+'(function(){\n' +
+'  var wrap = document.getElementById(\'m3gWrap\');\n' +
+'  if(!wrap) return;\n' +
+'  var lang = \'en\';\n' +
+'  var btns = wrap.querySelectorAll(\'.m3g-langtoggle button\');\n' +
+'  var nodes = wrap.querySelectorAll(\'[data-en]\');\n' +
+'  var cards = Array.prototype.slice.call(wrap.querySelectorAll(\'.m3g-grid > .m3g-card\'));\n' +
+'  var searchBox = document.getElementById(\'m3gSearchBox\');\n' +
+'  var emptyMsg = document.getElementById(\'m3gEmpty\');\n' +
+'  function setLang(l){\n' +
+'    lang = l;\n' +
+'    nodes.forEach(function(el){ var t = el.getAttribute(\'data-\'+l); if(t!==null) el.textContent = t; });\n' +
+'    btns.forEach(function(b){ b.classList.toggle(\'active\', b.getAttribute(\'data-lang\')===l); });\n' +
+'  }\n' +
+'  btns.forEach(function(b){ b.addEventListener(\'click\', function(){ setLang(b.getAttribute(\'data-lang\')); }); });\n' +
+'  function filter(){\n' +
+'    var q = (searchBox.value||\'\').trim().toLowerCase();\n' +
+'    var visible = 0;\n' +
+'    cards.forEach(function(c){\n' +
+'      var hay = c.textContent.toLowerCase();\n' +
+'      var show = !q || hay.indexOf(q) !== -1;\n' +
+'      c.style.display = show ? \'\' : \'none\';\n' +
+'      if(show) visible++;\n' +
+'    });\n' +
+'    emptyMsg.style.display = visible ? \'none\' : \'block\';\n' +
+'  }\n' +
+'  searchBox.addEventListener(\'input\', filter);\n' +
+'})();\n' +
+'<' + '/script>'
+    );
+  }
+
+  var exportModal = document.getElementById('exportModal');
+  var exportBox = document.getElementById('exportBox');
+  document.getElementById('btnExport').addEventListener('click', function(){
+    exportBox.value = buildExportHtml();
+    exportModal.classList.add('open');
+  });
+  document.getElementById('closeModal').addEventListener('click', function(){ exportModal.classList.remove('open'); });
+  document.getElementById('closeModal2').addEventListener('click', function(){ exportModal.classList.remove('open'); });
+  document.getElementById('copyBtn').addEventListener('click', function(){
+    exportBox.select();
+    document.execCommand('copy');
+    var btn = document.getElementById('copyBtn');
+    var old = btn.textContent;
+    btn.textContent = 'Copied ✓';
+    setTimeout(function(){ btn.textContent = old; }, 1500);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

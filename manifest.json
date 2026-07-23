@@ -39,6 +39,19 @@
   ],
   "files": [
     {
+      "id": "05688b1d-e81a-431b-9259-d54a672c6f6e",
+      "project_id": "c2fa802f-f7ed-4e0c-9ce7-a13c52b7f2d6",
+      "file_group_id": "ad3d61fe-5d0f-4fe9-bd17-c760f7ec661f",
+      "title": "tool page",
+      "description": null,
+      "version": 1,
+      "path": "files/c2fa802f-f7ed-4e0c-9ce7-a13c52b7f2d6/ad3d61fe-5d0f-4fe9-bd17-c760f7ec661f/v1-tool.html",
+      "original_name": "tool.html",
+      "mime_type": "text/html",
+      "size_bytes": 33929,
+      "created_at": "2026-07-23T10:59:55.559Z"
+    },
+    {
       "id": "5eb47f83-c05f-4d17-add3-192a07c502d7",
       "project_id": "62f3a923-3e13-460f-9c54-de3310828023",
       "file_group_id": "2749eee0-06c6-4b96-a7ed-e048c0326e55",
