@@ -57,6 +57,19 @@
   ],
   "files": [
     {
+      "id": "053b6e11-e189-4fec-ad80-ff0beddac486",
+      "project_id": "019cd778-2578-4564-8854-176305dd053e",
+      "file_group_id": "9cdae337-46d6-4443-8a88-5ebf3cea4224",
+      "title": "qr code viiting card",
+      "description": null,
+      "version": 2,
+      "path": "files/019cd778-2578-4564-8854-176305dd053e/9cdae337-46d6-4443-8a88-5ebf3cea4224/v2-qr.html",
+      "original_name": "qr.html",
+      "mime_type": "text/html",
+      "size_bytes": 19723,
+      "created_at": "2026-07-23T11:24:09.118Z"
+    },
+    {
       "id": "8345b5b6-d28c-4124-9cb1-897c496ba3e1",
       "project_id": "fdb787e3-c801-480b-8f56-36e1e3337f06",
       "file_group_id": "5513753a-cb31-45ff-b928-072977a239b2",
