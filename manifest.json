@@ -57,6 +57,19 @@
   ],
   "files": [
     {
+      "id": "5c8ba796-da44-4e5a-9fdb-e2fa5c0f3a3b",
+      "project_id": "af3735c6-8612-4b28-9b87-41a77d1ffe1c",
+      "file_group_id": "b4848c3d-7075-48b5-8d20-db4911d00625",
+      "title": "shop",
+      "description": null,
+      "version": 1,
+      "path": "files/af3735c6-8612-4b28-9b87-41a77d1ffe1c/b4848c3d-7075-48b5-8d20-db4911d00625/v1-my3dgifts_v39_email_shipping_FIXED.zip",
+      "original_name": "my3dgifts_v39_email_shipping_FIXED.zip",
+      "mime_type": "application/x-zip-compressed",
+      "size_bytes": 319868,
+      "created_at": "2026-07-23T11:26:39.015Z"
+    },
+    {
       "id": "053b6e11-e189-4fec-ad80-ff0beddac486",
       "project_id": "019cd778-2578-4564-8854-176305dd053e",
       "file_group_id": "9cdae337-46d6-4443-8a88-5ebf3cea4224",
