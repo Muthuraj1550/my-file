@@ -75,6 +75,19 @@
   ],
   "files": [
     {
+      "id": "cb32441b-8a27-4b88-9e9d-87f0073834ac",
+      "project_id": "fdb787e3-c801-480b-8f56-36e1e3337f06",
+      "file_group_id": "da298171-b13a-42f0-b45e-a1222147faa8",
+      "title": "my 3d editor clien view",
+      "description": null,
+      "version": 1,
+      "path": "files/fdb787e3-c801-480b-8f56-36e1e3337f06/da298171-b13a-42f0-b45e-a1222147faa8/v1-my_3d_editor_client_view.zip",
+      "original_name": "my 3d editor client view.zip",
+      "mime_type": "application/x-zip-compressed",
+      "size_bytes": 273246,
+      "created_at": "2026-08-06T10:06:06.595Z"
+    },
+    {
       "id": "2b529a78-5fc9-46c0-97c4-0dbbe4674468",
       "project_id": "d847674c-148c-4235-b2d8-b66c78bf3a20",
       "file_group_id": "aacd6083-56da-4b3b-b7bc-5fc81fe0c643",
