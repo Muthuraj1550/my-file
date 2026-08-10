@@ -81,6 +81,19 @@
   ],
   "files": [
     {
+      "id": "86a1d561-0229-4fdf-b3c8-b13d886596bf",
+      "project_id": "94abacca-29bb-4a88-912d-0e37f5235f81",
+      "file_group_id": "3540792c-8e43-4298-9e3a-e5e5545dbc10",
+      "title": "pan zoom  clip only",
+      "description": "clip only",
+      "version": 1,
+      "path": "files/94abacca-29bb-4a88-912d-0e37f5235f81/3540792c-8e43-4298-9e3a-e5e5545dbc10/v1-DragZoom_Package_8__1_.zip",
+      "original_name": "DragZoom_Package_8 (1).zip",
+      "mime_type": "application/x-zip-compressed",
+      "size_bytes": 27801,
+      "created_at": "2026-08-10T03:34:58.818Z"
+    },
+    {
       "id": "afdcd136-e693-4ba9-a09d-227ac1150a37",
       "project_id": "fdb787e3-c801-480b-8f56-36e1e3337f06",
       "file_group_id": "21e822b1-0148-402c-9802-f18fe77a7d1d",
