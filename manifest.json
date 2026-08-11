@@ -81,6 +81,19 @@
   ],
   "files": [
     {
+      "id": "551a3eaf-017b-4f4b-b484-654b12aaa8f4",
+      "project_id": "94abacca-29bb-4a88-912d-0e37f5235f81",
+      "file_group_id": "f97fab6e-1678-44bf-8fa0-63ebbd431d4f",
+      "title": "silence detect only",
+      "description": null,
+      "version": 1,
+      "path": "files/94abacca-29bb-4a88-912d-0e37f5235f81/f97fab6e-1678-44bf-8fa0-63ebbd431d4f/v1-ok_silence-cutter-premiere_4.zip",
+      "original_name": "ok silence-cutter-premiere_4.zip",
+      "mime_type": "application/x-zip-compressed",
+      "size_bytes": 11367,
+      "created_at": "2026-08-11T01:00:18.370Z"
+    },
+    {
       "id": "5f642442-c082-49a7-957e-6f6c95409721",
       "project_id": "94abacca-29bb-4a88-912d-0e37f5235f81",
       "file_group_id": "aca07dfa-7204-412b-b781-4656c70e5135",
