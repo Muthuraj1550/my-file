@@ -81,6 +81,19 @@
   ],
   "files": [
     {
+      "id": "fc4dbe3f-9db5-4ff4-9ebc-660c7ca9ba7c",
+      "project_id": "94abacca-29bb-4a88-912d-0e37f5235f81",
+      "file_group_id": "856e381b-21ab-421e-bb52-699ca4ed27fd",
+      "title": "silence anlayse",
+      "description": null,
+      "version": 1,
+      "path": "files/94abacca-29bb-4a88-912d-0e37f5235f81/856e381b-21ab-421e-bb52-699ca4ed27fd/v1-silence-cutter-premiere__analyse5.zip",
+      "original_name": "silence-cutter-premiere_ analyse5.zip",
+      "mime_type": "application/x-zip-compressed",
+      "size_bytes": 12669,
+      "created_at": "2026-08-11T01:01:25.824Z"
+    },
+    {
       "id": "551a3eaf-017b-4f4b-b484-654b12aaa8f4",
       "project_id": "94abacca-29bb-4a88-912d-0e37f5235f81",
       "file_group_id": "f97fab6e-1678-44bf-8fa0-63ebbd431d4f",
