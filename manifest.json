@@ -81,6 +81,19 @@
   ],
   "files": [
     {
+      "id": "4a964b7e-13b2-4dee-be32-4a118bf830ca",
+      "project_id": "fdb787e3-c801-480b-8f56-36e1e3337f06",
+      "file_group_id": "4de4f348-b410-4ca1-9d74-c10bd0db7ac1",
+      "title": "post para fix",
+      "description": null,
+      "version": 1,
+      "path": "files/fdb787e3-c801-480b-8f56-36e1e3337f06/4de4f348-b410-4ca1-9d74-c10bd0db7ac1/v1-my3dgifts-course-content-builder-update.zip",
+      "original_name": "my3dgifts-course-content-builder-update.zip",
+      "mime_type": "application/x-zip-compressed",
+      "size_bytes": 308650,
+      "created_at": "2026-08-23T11:23:36.387Z"
+    },
+    {
       "id": "422de69c-d7ab-4ca7-ad34-596586dd82dc",
       "project_id": "62f3a923-3e13-460f-9c54-de3310828023",
       "file_group_id": "cc523272-ee60-4ec8-8dad-ecb1b356e189",
