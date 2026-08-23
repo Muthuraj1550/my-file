@@ -81,6 +81,19 @@
   ],
   "files": [
     {
+      "id": "422de69c-d7ab-4ca7-ad34-596586dd82dc",
+      "project_id": "62f3a923-3e13-460f-9c54-de3310828023",
+      "file_group_id": "cc523272-ee60-4ec8-8dad-ecb1b356e189",
+      "title": "add  user name",
+      "description": null,
+      "version": 1,
+      "path": "files/62f3a923-3e13-460f-9c54-de3310828023/cc523272-ee60-4ec8-8dad-ecb1b356e189/v1-index__22_.html",
+      "original_name": "index (22).html",
+      "mime_type": "text/html",
+      "size_bytes": 34990,
+      "created_at": "2026-08-23T10:47:50.448Z"
+    },
+    {
       "id": "c8983ad9-62c5-48fe-9006-342162213f40",
       "project_id": "94abacca-29bb-4a88-912d-0e37f5235f81",
       "file_group_id": "26b65d14-7c35-4e06-b10b-a7f05fd26c1e",
