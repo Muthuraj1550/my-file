@@ -81,6 +81,19 @@
   ],
   "files": [
     {
+      "id": "21f983fd-3abf-42bc-9020-42ea8968c88d",
+      "project_id": "fdb787e3-c801-480b-8f56-36e1e3337f06",
+      "file_group_id": "4de4f348-b410-4ca1-9d74-c10bd0db7ac1",
+      "title": "post para fix",
+      "description": null,
+      "version": 2,
+      "path": "files/fdb787e3-c801-480b-8f56-36e1e3337f06/4de4f348-b410-4ca1-9d74-c10bd0db7ac1/v2-my3dgifts-full-update-v4.zip",
+      "original_name": "my3dgifts-full-update-v4.zip",
+      "mime_type": "application/x-zip-compressed",
+      "size_bytes": 309014,
+      "created_at": "2026-08-24T02:07:23.948Z"
+    },
+    {
       "id": "4a964b7e-13b2-4dee-be32-4a118bf830ca",
       "project_id": "fdb787e3-c801-480b-8f56-36e1e3337f06",
       "file_group_id": "4de4f348-b410-4ca1-9d74-c10bd0db7ac1",
