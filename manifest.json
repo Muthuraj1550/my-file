@@ -81,6 +81,19 @@
   ],
   "files": [
     {
+      "id": "e7197cfc-29f8-4f47-8b59-7e077e9913b3",
+      "project_id": "94abacca-29bb-4a88-912d-0e37f5235f81",
+      "file_group_id": "32ab69aa-b647-4de4-8c16-4de8aaaab81c",
+      "title": "yt cut",
+      "description": null,
+      "version": 1,
+      "path": "files/94abacca-29bb-4a88-912d-0e37f5235f81/32ab69aa-b647-4de4-8c16-4de8aaaab81c/v1-YTDownloaderPanel_fixed_v2.zip",
+      "original_name": "YTDownloaderPanel_fixed_v2.zip",
+      "mime_type": "application/x-zip-compressed",
+      "size_bytes": 9804,
+      "created_at": "2026-09-09T01:06:25.898Z"
+    },
+    {
       "id": "21f983fd-3abf-42bc-9020-42ea8968c88d",
       "project_id": "fdb787e3-c801-480b-8f56-36e1e3337f06",
       "file_group_id": "4de4f348-b410-4ca1-9d74-c10bd0db7ac1",
