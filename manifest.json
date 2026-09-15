@@ -81,6 +81,19 @@
   ],
   "files": [
     {
+      "id": "8c55075c-e7eb-49df-92a4-c9622b4a6572",
+      "project_id": "fdb787e3-c801-480b-8f56-36e1e3337f06",
+      "file_group_id": "c8450341-f50b-4823-82a8-41b68a719ac4",
+      "title": "project save admin",
+      "description": null,
+      "version": 1,
+      "path": "files/fdb787e3-c801-480b-8f56-36e1e3337f06/c8450341-f50b-4823-82a8-41b68a719ac4/v1-site-update-full-fixed-v2.zip",
+      "original_name": "site-update-full-fixed-v2.zip",
+      "mime_type": "application/x-zip-compressed",
+      "size_bytes": 337339,
+      "created_at": "2026-09-15T12:34:06.760Z"
+    },
+    {
       "id": "1a1b0976-276b-4edc-bfc2-66e904c18464",
       "project_id": "fdb787e3-c801-480b-8f56-36e1e3337f06",
       "file_group_id": "e93287ef-8c40-450c-aa3d-61ce39782356",
