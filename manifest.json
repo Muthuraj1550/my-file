@@ -81,6 +81,19 @@
   ],
   "files": [
     {
+      "id": "edaa653e-4f31-4581-b541-4a01307bd317",
+      "project_id": "fdb787e3-c801-480b-8f56-36e1e3337f06",
+      "file_group_id": "dafeff28-67ad-4974-a8bb-d6e78be20692",
+      "title": "home project preview",
+      "description": null,
+      "version": 1,
+      "path": "files/fdb787e3-c801-480b-8f56-36e1e3337f06/dafeff28-67ad-4974-a8bb-d6e78be20692/v1-site-update-full-fixed-v4.zip",
+      "original_name": "site-update-full-fixed-v4.zip",
+      "mime_type": "application/x-zip-compressed",
+      "size_bytes": 342034,
+      "created_at": "2026-09-16T02:49:12.328Z"
+    },
+    {
       "id": "8c55075c-e7eb-49df-92a4-c9622b4a6572",
       "project_id": "fdb787e3-c801-480b-8f56-36e1e3337f06",
       "file_group_id": "c8450341-f50b-4823-82a8-41b68a719ac4",
