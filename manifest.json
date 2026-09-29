@@ -81,6 +81,19 @@
   ],
   "files": [
     {
+      "id": "2d3b08c8-782b-415b-a859-ef85cd5af2ed",
+      "project_id": "fdb787e3-c801-480b-8f56-36e1e3337f06",
+      "file_group_id": "5b011a58-acc4-4931-a997-bb72b48ebc6b",
+      "title": "TEXT PLUGIN RENDER",
+      "description": null,
+      "version": 1,
+      "path": "files/fdb787e3-c801-480b-8f56-36e1e3337f06/5b011a58-acc4-4931-a997-bb72b48ebc6b/v1-my3dgifts-main-editor-FULL-updated-fixed.zip",
+      "original_name": "my3dgifts-main-editor-FULL-updated-fixed.zip",
+      "mime_type": "application/x-zip-compressed",
+      "size_bytes": 359534,
+      "created_at": "2026-09-29T03:49:15.803Z"
+    },
+    {
       "id": "58e9d485-f996-44d1-a352-a99a2846109e",
       "project_id": "18a1e3af-e2da-4e1d-a2ff-5cfb7b1651d8",
       "file_group_id": "91db74e7-75df-4138-8da2-d83a64e3c862",
