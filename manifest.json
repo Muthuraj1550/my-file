@@ -81,6 +81,19 @@
   ],
   "files": [
     {
+      "id": "c11e3c8a-d87f-4141-932a-1c56ae217776",
+      "project_id": "019cd778-2578-4564-8854-176305dd053e",
+      "file_group_id": "f6afd9e8-5ff6-4410-948c-1f2af81a57f5",
+      "title": "PLUGIN EDITOR SWEEP NAME",
+      "description": null,
+      "version": 1,
+      "path": "files/019cd778-2578-4564-8854-176305dd053e/f6afd9e8-5ff6-4410-948c-1f2af81a57f5/v1-text-roll-extrude-v3-sweep-path__7_.effect",
+      "original_name": "text-roll-extrude-v3-sweep-path (7).effect",
+      "mime_type": null,
+      "size_bytes": 16739,
+      "created_at": "2026-09-29T03:50:35.074Z"
+    },
+    {
       "id": "2d3b08c8-782b-415b-a859-ef85cd5af2ed",
       "project_id": "fdb787e3-c801-480b-8f56-36e1e3337f06",
       "file_group_id": "5b011a58-acc4-4931-a997-bb72b48ebc6b",

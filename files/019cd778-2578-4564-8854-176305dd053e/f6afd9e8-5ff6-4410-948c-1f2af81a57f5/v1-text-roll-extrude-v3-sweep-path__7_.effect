@@ -1,0 +1,392 @@
+/*
+  Text Roll Extrude v3 - Sweep Path (simplified)
+  ---------------------
+  v2 had TWO different bending mechanisms: "Roll Angle" (curled the extrude
+  depth using an IMPLICIT radius = depth / angle, with no diameter control),
+  and "Sweep Axis + Circle Dia + Bend Deg" (curls a chosen axis around an
+  EXPLICIT, correct diameter).
+
+  Roll Angle is what was causing the collapsed/blob look: it has no real
+  Diameter control, so as Height Scale grows, tall letters sweep through a
+  huge arc around a tiny implicit radius and self-intersect.
+
+  v3 removes Roll Angle, Pivot Side, Roll Direction, Anchor Face, Keep
+  Position, Curve Side and the Sweep Axis picker entirely, and hardwires
+  the working mechanism to always wrap the extrude DEPTH (Z) around a circle
+  of the diameter you set. Letter height only offsets the ring radius by its
+  own distance from vertical center (proper wall-thickness behavior), it does
+  NOT change the sweep amount - so Circle Dia stays exactly what you dial in,
+  no matter how tall the text is.
+
+  Controls left: Bend Deg (how far around the circle), Circle Dia (the
+  diameter itself), Segments (smoothness), Height Scale (%), Path Offset
+  (fine radius nudge), Thickness Side (Inside/Outside).
+*/
+return {
+  name: 'Text Roll Extrude v3 - Sweep Path',
+  controls: [
+    // type: 'text' (not 'number') so the field accepts a leading "="
+    // for a formula - number inputs in most hosts reject the "=" character.
+    // Plain numbers still work fine typed into a text field, e.g. "90".
+    { key: 'bendDeg',    label: 'Bend Deg (deg)',      type: 'text', default: '90' },
+    { key: 'circleDia',  label: 'Circle Dia',          type: 'text', default: '40' },
+    { key: 'segments',   label: 'Segments (0 = auto)', type: 'text', default: '0' },
+    { key: 'heightScale', label: 'Height Scale (%)',   type: 'text', default: '100' },
+    { key: 'pathOffset', label: 'Path Offset',         type: 'text', default: '0' },
+    { key: 'crossSectionSide', label: 'Thickness Side', type: 'select', options: ['Inside', 'Outside'], default: 'Outside' },
+    { key: 'pivotSide',  label: 'Pivot Side',           type: 'select', options: ['Bottom', 'Center', 'Top'], default: 'Center' },
+    { key: 'rollDir',    label: 'Roll Direction',       type: 'select', options: ['Up', 'Down'], default: 'Up' },
+    { key: 'anchorFace', label: 'Anchor Face',          type: 'select', options: ['Front', 'Back', 'Center'], default: 'Front' }
+  ],
+  apply: function (obj, params, THREE) {
+    if (!obj || !obj.geometry || !obj.geometry.attributes || !obj.geometry.attributes.position) return;
+
+    var geometry = obj.geometry;
+
+    // ---- work out bend angle first, since segment count depends on it ----
+    var bendDeg = numParam(params.bendDeg, 0);
+    var bendRad = THREE.MathUtils.degToRad(bendDeg);
+
+    var segParam = numParam(params.segments, 0);
+    var segments;
+    if (isFinite(segParam) && segParam > 0) {
+      segments = Math.min(80, Math.max(1, Math.round(segParam)));
+    } else {
+      // auto: roughly 1 segment per 6 degrees of bend, clamped to a sane range
+      segments = Math.min(60, Math.max(4, Math.round(Math.abs(bendDeg) / 6) + 1));
+    }
+    if (Math.abs(bendRad) < 0.00001) segments = 1; // no bend -> no need to subdivide
+
+    // ---- 1. subdivide along Z (depth) if needed, for a smooth curl ----
+    // IMPORTANT: copy the subdivided result INTO the existing geometry
+    // object (geometry.copy(...)) instead of replacing obj.geometry with a
+    // new instance. Some hosts cache/track the geometry object by
+    // reference (e.g. to regenerate it when the Text field changes) -
+    // swapping in a brand-new object breaks that link, so a later text
+    // change updates the orphaned old geometry instead of the one actually
+    // attached to the visible mesh.
+    if (segments > 1) {
+      var subdivided = subdivideAlongZ(geometry, segments, THREE);
+      geometry.copy(subdivided);
+    }
+
+    var position = geometry.attributes.position;
+    geometry.computeBoundingBox();
+    var bbox = geometry.boundingBox;
+    if (!bbox) return;
+
+    var centerY = (bbox.min.y + bbox.max.y) / 2;
+    var centerZ = (bbox.min.z + bbox.max.z) / 2;
+    var axisMin = bbox.min.z, axisMax = bbox.max.z;
+    var axisRange = axisMax - axisMin;
+    if (!isFinite(axisRange) || Math.abs(axisRange) < 0.0001) axisRange = 1;
+
+    // Pivot Side: which Y level the height-scale AND the ring radius are
+    // measured from (Bottom keeps the base at exactly Circle Dia's radius,
+    // Center splits the letter above/below it, Top keeps the top fixed).
+    var pivotSide = params.pivotSide || 'Center';
+    var pivotY = (pivotSide === 'Bottom') ? bbox.min.y : (pivotSide === 'Top') ? bbox.max.y : centerY;
+
+    // Roll Direction: flips which way the curl winds, independent of the
+    // sign typed/computed into Bend Deg.
+    var dirSign = (params.rollDir === 'Down') ? -1 : 1;
+
+    // Anchor Face: where along the depth the bend "starts" (angle = 0).
+    //   Front  -> the front face (max Z) stays put, the back face sweeps
+    //             through the full Bend Deg
+    //   Back   -> the back face (min Z) stays put instead
+    //   Center -> bend is symmetric about mid-depth (default, as before)
+    var anchorFace = params.anchorFace || 'Front';
+
+    var circleDia = numParam(params.circleDia, 40);
+    if (!isFinite(circleDia) || circleDia <= 0) circleDia = 1;
+    var radius = circleDia / 2;
+
+    var pathOffset = numParam(params.pathOffset, 0);
+
+    var thicknessSide = (params.crossSectionSide === 'Inside') ? -1 : 1;
+
+    var heightScalePct = numParam(params.heightScale, 100);
+    if (!isFinite(heightScalePct) || heightScalePct <= 0) heightScalePct = 100;
+    var heightScale = heightScalePct / 100;
+
+    var doBend = Math.abs(bendRad) > 0.00001;
+
+    for (var i = 0; i < position.count; i++) {
+      var x = position.getX(i);
+      var y = position.getY(i);
+      var z = position.getZ(i);
+
+      // ---- height scale (Y), around the chosen Pivot Side, BEFORE bending ----
+      if (Math.abs(heightScale - 1) > 0.00001) {
+        y = pivotY + (y - pivotY) * heightScale;
+      }
+
+      // ---- wrap the depth (Z) around a circle of the chosen diameter.
+      // Letter height (relative to vertical center) only nudges the ring
+      // radius - it never changes how far around the circle a point travels,
+      // so Circle Dia keeps meaning the same thing at any Height Scale ----
+      if (doBend) {
+        var t;
+        if (anchorFace === 'Front') t = (bbox.max.z - z) / axisRange;       // 0 at front, 1 at back
+        else if (anchorFace === 'Back') t = (z - bbox.min.z) / axisRange;   // 0 at back, 1 at front
+        else t = (z - centerZ) / axisRange;                                  // -0.5..0.5, symmetric
+
+        var thetaB = t * bendRad * dirSign;
+        var crossRel = y - pivotY; // letter's own height offset from the chosen pivot
+        var ringRadius = Math.max(radius + pathOffset + (thicknessSide * crossRel), 0.001);
+
+        var newZ = centerZ + Math.sin(thetaB) * ringRadius;
+        var newY = pivotY + (Math.cos(thetaB) * ringRadius) - radius - pathOffset;
+
+        y = newY;
+        z = newZ;
+      }
+
+      position.setXYZ(i, x, y, z);
+    }
+
+    position.needsUpdate = true;
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+    geometry.computeVertexNormals();
+
+
+    // ===================================================================
+    // FORMULA SUPPORT: any number field may be a plain number OR a string
+    // starting with "=", e.g.  =Box1.Vx+10   =.Vy*2   =(Box1.Vx-4)/2
+    //
+    // Tokens (same as the app's Formula Box):
+    //   .Mx .My .Mz  position     .Rx .Ry .Rz  rotation (deg)
+    //   .Sx .Sy .Sz  scale ratio  .Vx .Vy .Vz  live world size (mm)
+    // "Name.Token" reads another object by its name; a bare ".Token" reads
+    // THIS text object. Only + - * / % and ( ) are allowed after that, and
+    // it is evaluated by a small safe parser (no eval).
+    // ===================================================================
+    function numParam(v, fallback) {
+      if (typeof v === 'string' && v.trim().charAt(0) === '=') {
+        var r = evalFormula(v.trim().slice(1));
+        return (r === null || !isFinite(r)) ? fallback : r;
+      }
+      var n = parseFloat(v);
+      return isFinite(n) ? n : fallback;
+    }
+
+    function findObject(name) {
+      if (!name || name === obj.name) return obj;
+      var root = obj;
+      while (root.parent) root = root.parent;
+      var hit = root.getObjectByName ? root.getObjectByName(name) : null;
+      if (hit) return hit;
+      var lower = name.toLowerCase();
+      root.traverse(function (o) { if (!hit && o.name && o.name.toLowerCase() === lower) hit = o; });
+      return hit;
+    }
+
+    function worldSize(target) {
+      var size = new THREE.Vector3();
+      new THREE.Box3().setFromObject(target).getSize(size);
+      return size;
+    }
+
+    function tokenValue(target, tok) {
+      // common .Mx/.My/.Mz  .Rx/.Ry/.Rz  .Sx/.Sy/.Sz  .Vx/.Vy/.Vz
+      if (tok.length === 2 && /^[MRS][xyz]$/.test(tok)) {
+        var axis = tok.charAt(1).toLowerCase();
+        var kind = tok.charAt(0);
+        if (kind === 'M') return target.position[axis];
+        if (kind === 'R') return THREE.MathUtils.radToDeg(target.rotation[axis]);
+        return target.scale[axis]; // 'S'
+      }
+      if (tok === 'Vx') return worldSize(target).x;
+      if (tok === 'Vy') return worldSize(target).y;
+      if (tok === 'Vz') return worldSize(target).z;
+
+      // Box-shape tokens: .dw/.dh/.dd (Width/Height/Depth), .cr (Corner
+      // Round), .Ex (Extrude amount). This script only ever receives a
+      // plain THREE.Object3D - it has no access to the app's own box/shape
+      // parameters, so these are approximated from world-space size:
+      // dw~Vx, dh~Vy, dd~Vz, Ex~Vz (extrude depth). If the target stores its
+      // own real value in userData (e.g. userData.dw), that is used instead
+      // when present, which will be exact rather than an approximation.
+      if (target.userData && target.userData[tok] !== undefined) {
+        var uv = parseFloat(target.userData[tok]);
+        if (isFinite(uv)) return uv;
+      }
+      var ws = worldSize(target);
+      if (tok === 'dw') return ws.x;
+      if (tok === 'dh') return ws.y;
+      if (tok === 'dd') return ws.z;
+      if (tok === 'Ex') return ws.z;
+      return null; // 'cr' (corner round) has no generic geometric equivalent
+    }
+
+    function evalFormula(text) {
+      try {
+        var failed = false;
+        var replaced = text.replace(/([A-Za-z_][\w-]*)?\.(Mx|My|Mz|Rx|Ry|Rz|Sx|Sy|Sz|Vx|Vy|Vz|dw|dh|dd|cr|Ex)\b/g,
+          function (m, name, tok) {
+            var target = findObject(name);
+            if (!target) { failed = true; return '0'; }
+            var v = tokenValue(target, tok);
+            if (v === null || !isFinite(v)) { failed = true; return '0'; }
+            return '(' + v + ')';
+          });
+        if (failed || /[^0-9+\-*\/%().eE\s]/.test(replaced)) return null;
+
+        var pos = 0, src = replaced.replace(/\s+/g, '');
+        function peek() { return src.charAt(pos); }
+        function parseExpr() {
+          var v = parseTerm();
+          while (peek() === '+' || peek() === '-') {
+            var op = src.charAt(pos++);
+            var r = parseTerm();
+            v = (op === '+') ? v + r : v - r;
+          }
+          return v;
+        }
+        function parseTerm() {
+          var v = parseFactor();
+          while (peek() === '*' || peek() === '/' || peek() === '%') {
+            var op = src.charAt(pos++);
+            var r = parseFactor();
+            v = (op === '*') ? v * r : (op === '/') ? v / r : v % r;
+          }
+          return v;
+        }
+        function parseFactor() {
+          if (peek() === '-') { pos++; return -parseFactor(); }
+          if (peek() === '+') { pos++; return parseFactor(); }
+          if (peek() === '(') {
+            pos++;
+            var v = parseExpr();
+            if (peek() !== ')') throw new Error('missing )');
+            pos++;
+            return v;
+          }
+          var m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?/.exec(src.slice(pos));
+          if (!m) throw new Error('bad number');
+          pos += m[0].length;
+          return parseFloat(m[0]);
+        }
+        var result = parseExpr();
+        if (pos !== src.length) return null;
+        return result;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // ===================================================================
+    // Cuts the mesh at `segments`-1 evenly spaced Z-planes so it has enough
+    // vertices along the depth axis to bend smoothly. Only Z is subdivided
+    // (not X/Y), so triangle count grows roughly linearly with segments,
+    // not exponentially.
+    // ===================================================================
+    // Preserves EVERY attribute present on the source geometry (position,
+    // normal, uv, color, etc.) while cutting - not just position. Dropping
+    // uv/normal/color here was causing the broken/unclear preview after
+    // bending, since any texture or vertex-color data got wiped out.
+    function subdivideAlongZ(geom, segs, THREE) {
+      var src = geom.index ? geom.toNonIndexed() : geom;
+      var posAttr = src.attributes.position;
+      var attrNames = Object.keys(src.attributes);
+
+      geom.computeBoundingBox();
+      var bb = geom.boundingBox;
+      var zMin = bb.min.z, zMax = bb.max.z;
+      var range = zMax - zMin;
+      if (!isFinite(range) || Math.abs(range) < 0.00001) return geom;
+
+      // build initial triangle list [ [v0,v1,v2], ... ] as vertex objects that
+      // carry every attribute's components, e.g. { position:[x,y,z], uv:[u,v] }
+      var triCount = posAttr.count / 3;
+      var triangles = [];
+      for (var t = 0; t < triCount; t++) {
+        var tri = [];
+        for (var k = 0; k < 3; k++) {
+          var idx = t * 3 + k;
+          var vert = {};
+          for (var a = 0; a < attrNames.length; a++) {
+            var name = attrNames[a];
+            var attr = src.attributes[name];
+            var size = attr.itemSize;
+            var comps = new Array(size);
+            for (var c = 0; c < size; c++) comps[c] = attr.array[idx * size + c];
+            vert[name] = comps;
+          }
+          tri.push(vert);
+        }
+        triangles.push(tri);
+      }
+
+      function lerpV(a, b, tt) {
+        var out = {};
+        for (var a2 = 0; a2 < attrNames.length; a2++) {
+          var name = attrNames[a2];
+          var av = a[name], bv = b[name];
+          var comps = new Array(av.length);
+          for (var c = 0; c < av.length; c++) comps[c] = av[c] + (bv[c] - av[c]) * tt;
+          out[name] = comps;
+        }
+        return out;
+      }
+
+      function getZ(v) { return v.position[2]; }
+
+      function cutAtZ(tri, zPlane) {
+        var d = [getZ(tri[0]) - zPlane, getZ(tri[1]) - zPlane, getZ(tri[2]) - zPlane];
+        var pos = [], neg = [];
+        for (var i = 0; i < 3; i++) {
+          if (d[i] > 1e-7) pos.push(i);
+          else if (d[i] < -1e-7) neg.push(i);
+        }
+        if (pos.length === 0 || neg.length === 0) return [tri]; // doesn't cross this plane
+
+        var singleArr, doubleArr;
+        if (pos.length === 1) { singleArr = pos; doubleArr = neg; } else { singleArr = neg; doubleArr = pos; }
+
+        var A = tri[singleArr[0]];
+        var B = tri[doubleArr[0]];
+        var C = tri[doubleArr[1]];
+
+        var tAB = (zPlane - getZ(A)) / (getZ(B) - getZ(A));
+        var tAC = (zPlane - getZ(A)) / (getZ(C) - getZ(A));
+        var AB = lerpV(A, B, tAB);
+        var AC = lerpV(A, C, tAC);
+
+        return [
+          [A, AB, AC],
+          [AB, B, C],
+          [AB, C, AC]
+        ];
+      }
+
+      for (var s = 1; s < segs; s++) {
+        var zPlane = zMin + range * (s / segs);
+        var next = [];
+        for (var ti = 0; ti < triangles.length; ti++) {
+          var pieces = cutAtZ(triangles[ti], zPlane);
+          for (var p = 0; p < pieces.length; p++) next.push(pieces[p]);
+        }
+        triangles = next;
+      }
+
+      var newGeom = new THREE.BufferGeometry();
+      for (var an = 0; an < attrNames.length; an++) {
+        var attrName = attrNames[an];
+        var itemSize = src.attributes[attrName].itemSize;
+        var array = new Float32Array(triangles.length * 3 * itemSize);
+        var o = 0;
+        for (var tt2 = 0; tt2 < triangles.length; tt2++) {
+          for (var vv = 0; vv < 3; vv++) {
+            var comps = triangles[tt2][vv][attrName];
+            for (var c2 = 0; c2 < itemSize; c2++) array[o++] = comps[c2];
+          }
+        }
+        newGeom.setAttribute(attrName, new THREE.BufferAttribute(array, itemSize));
+      }
+      return newGeom;
+    }
+  }
+};
