@@ -81,6 +81,19 @@
   ],
   "files": [
     {
+      "id": "21a49901-4e94-4b53-a03e-52b806cffcda",
+      "project_id": "fdb787e3-c801-480b-8f56-36e1e3337f06",
+      "file_group_id": "708b49c4-efc3-460f-b179-e16fb51a1fb7",
+      "title": "FRAME NAME TAXT",
+      "description": null,
+      "version": 1,
+      "path": "files/fdb787e3-c801-480b-8f56-36e1e3337f06/708b49c4-efc3-460f-b179-e16fb51a1fb7/v1-name-letter-fill-plugin__2_.js",
+      "original_name": "name-letter-fill-plugin (2).js",
+      "mime_type": "text/javascript",
+      "size_bytes": 6279,
+      "created_at": "2026-10-11T07:25:07.263Z"
+    },
+    {
       "id": "a9df821d-c4f1-441b-9b02-d468d95f348b",
       "project_id": "fdb787e3-c801-480b-8f56-36e1e3337f06",
       "file_group_id": "0d73f286-fbc5-43b2-b33d-29d85bfd118c",
