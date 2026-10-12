@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GPS Map Camera – Watermark Tool</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0d1117; color:#e2e8f0; font-family:'Segoe UI',Arial,sans-serif; padding:16px; min-height:100vh; }
+
+h1 { text-align:center; font-size:1.1rem; color:#fff; margin-bottom:16px; display:flex; align-items:center; justify-content:center; gap:8px; }
+.badge { background:#1d4ed8; padding:3px 10px; border-radius:20px; font-size:0.72rem; font-weight:700; }
+
+.layout { display:grid; grid-template-columns:330px 1fr; gap:16px; max-width:1300px; margin:0 auto; }
+
+/* ── Controls ── */
+.ctrl { background:#161b27; border:1px solid #21293a; border-radius:12px; padding:16px; height:fit-content; }
+.sec { font-size:0.65rem; font-weight:800; color:#38bdf8; letter-spacing:1.5px; text-transform:uppercase;
+       margin:14px 0 8px; padding-bottom:5px; border-bottom:1px solid #21293a; }
+.sec:first-child { margin-top:0; }
+
+.fg { margin-bottom:9px; }
+label { display:block; font-size:0.68rem; color:#64748b; margin-bottom:3px; font-weight:600; text-transform:uppercase; }
+input[type=text], input[type=datetime-local] {
+  width:100%; background:#0d1117; border:1px solid #21293a; color:#e2e8f0;
+  padding:7px 9px; border-radius:6px; font-size:0.8rem; font-family:inherit; outline:none;
+}
+input:focus { border-color:#3b82f6; }
+.row2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+
+.sl-row { display:flex; align-items:center; gap:8px; }
+input[type=range] { flex:1; accent-color:#3b82f6; cursor:pointer; }
+.sv { font-size:0.72rem; color:#3b82f6; min-width:34px; text-align:right; font-weight:700; }
+
+.tog-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.tog-lbl { font-size:0.78rem; color:#94a3b8; }
+.toggle { position:relative; width:36px; height:20px; }
+.toggle input { display:none; }
+.tslider { position:absolute; inset:0; background:#21293a; border-radius:20px; cursor:pointer; transition:.2s; }
+.tslider:before { content:''; position:absolute; width:14px; height:14px; left:3px; top:3px;
+  background:#fff; border-radius:50%; transition:.2s; }
+input:checked+.tslider { background:#3b82f6; }
+input:checked+.tslider:before { transform:translateX(16px); }
+
+.pos-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.pb { background:#0d1117; border:1px solid #21293a; color:#64748b; padding:5px 8px; border-radius:5px;
+      font-size:0.7rem; cursor:pointer; transition:.15s; text-align:center; }
+.pb:hover { border-color:#3b82f6; color:#93c5fd; }
+.pb.on { background:#1d4ed8; border-color:#3b82f6; color:#fff; }
+
+.btn { width:100%; padding:11px; border-radius:8px; border:none; font-weight:700; cursor:pointer;
+       margin-top:8px; font-size:0.88rem; transition:opacity .2s; }
+.btn-up { background:#334155; color:#e2e8f0; }
+.btn-ap { background:linear-gradient(135deg,#2563eb,#1e40af); color:#fff; }
+.btn-dl { background:linear-gradient(135deg,#059669,#065f46); color:#fff; display:none; }
+.btn:hover { opacity:.88; }
+
+/* ── Preview ── */
+.prev { background:#161b27; border:1px solid #21293a; border-radius:12px; padding:16px;
+        display:flex; flex-direction:column; align-items:center; }
+.prev-hd { font-size:0.65rem; font-weight:800; color:#38bdf8; letter-spacing:1.5px;
+           text-transform:uppercase; margin-bottom:12px; align-self:flex-start;
+           padding-bottom:5px; border-bottom:1px solid #21293a; width:100%; }
+#previewCanvas { max-width:100%; border-radius:6px; box-shadow:0 8px 30px rgba(0,0,0,.6); display:none; }
+.ph { width:100%; height:360px; border:2px dashed #21293a; border-radius:6px;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      color:#334155; gap:8px; font-size:.9rem; }
+.ph .ico { font-size:3rem; }
+.stat { margin-top:10px; font-size:.72rem; color:#334155; }
+
+/* ── Crop modal ── */
+#cropModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:200;
+             flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:24px; }
+.crop-wrap { max-width:85vw; max-height:65vh; overflow:hidden; }
+#cropImage { display:block; max-width:100%; }
+.crop-btns { display:flex; gap:12px; }
+.crop-btns button { padding:10px 28px; border-radius:8px; border:none; font-weight:700; cursor:pointer; font-size:.9rem; }
+.cb-ok { background:#2563eb; color:#fff; }
+.cb-cancel { background:#334155; color:#e2e8f0; }
+
+/* Map drag hint */
+.hint { font-size:.68rem; color:#475569; margin-top:6px; text-align:center; width:100%; }
+
+/* Map tabs */
+.map-tab { background:#0d1117; border:1px solid #21293a; color:#64748b; padding:5px 9px;
+  border-radius:5px; font-size:0.7rem; cursor:pointer; transition:.15s; font-weight:700; }
+.map-tab:hover { border-color:#3b82f6; color:#93c5fd; }
+.map-tab.on { background:#1d4ed8; border-color:#3b82f6; color:#fff; }
+#pasteZone:focus { border-color:#3b82f6; color:#93c5fd; }
+#pasteZone.has-img { border-color:#059669; color:#34d399; }
+</style>
+</head>
+<body>
+
+<!-- Crop Modal -->
+<div id="cropModal">
+  <div class="crop-wrap"><img id="cropImage" alt="crop"></div>
+  <div class="crop-btns">
+    <button class="cb-ok" onclick="finishCrop()">✅ Use This Photo</button>
+    <button class="cb-cancel" onclick="closeCrop()">✖ Cancel</button>
+  </div>
+</div>
+
+<h1><span class="badge">📷 GPS Map Camera</span> Watermark Tool — Exact Replica</h1>
+
+<div class="layout">
+
+  <!-- ── LEFT CONTROLS ── -->
+  <div class="ctrl">
+
+    <div class="sec">📁 Upload Photo</div>
+    <input type="file" id="fileInput" accept="image/*" style="display:none">
+    <button class="btn btn-up" onclick="document.getElementById('fileInput').click()">📂 Select Photo</button>
+
+    <div class="sec">📍 Location Details</div>
+    <div class="fg"><label>City / Location Name</label>
+      <input type="text" id="locName" value="Koombur, Tamil Nadu, India"></div>
+    <div class="fg"><label>Address</label>
+      <input type="text" id="address" value="606, Marudhamuthu Major District Road, Near Majestic Bus Stand, Koombur, Tamil Nadu 624710, India"></div>
+    <div class="row2">
+      <div class="fg"><label>Latitude</label><input type="text" id="lat" value="10.652818°"></div>
+      <div class="fg"><label>Longitude</label><input type="text" id="lng" value="77.979256°"></div>
+    </div>
+    <div class="fg"><label>Date & Time</label><input type="datetime-local" id="dt"></div>
+    <div class="fg"><label>Timezone</label><input type="text" id="tz" value="GMT +05:30"></div>
+
+    <div class="sec">🗺️ Map Thumbnail</div>
+    <div class="tog-row">
+      <span class="tog-lbl">Show Map Thumbnail</span>
+      <label class="toggle"><input type="checkbox" id="showMap" checked><span class="tslider"></span></label>
+    </div>
+    <div class="fg" id="mapUrlGroup">
+      <label>Map Image — Upload / Paste / URL</label>
+      <!-- Tab buttons -->
+      <div style="display:flex;gap:4px;margin-bottom:6px;">
+        <button class="map-tab on" id="tabUpload" onclick="switchMapTab('upload')">📁 Upload</button>
+        <button class="map-tab" id="tabPaste" onclick="switchMapTab('paste')">📋 Paste</button>
+        <button class="map-tab" id="tabUrl" onclick="switchMapTab('url')">🔗 URL</button>
+      </div>
+      <!-- Upload panel -->
+      <div id="panelUpload">
+        <input type="file" id="mapFileInput" accept="image/*" style="display:none">
+        <button class="btn btn-up" style="margin-top:0;font-size:0.78rem;padding:7px;" onclick="document.getElementById('mapFileInput').click()">📂 Map Image Select செய்யவும்</button>
+        <div id="mapUploadName" style="font-size:0.68rem;color:#38bdf8;margin-top:4px;"></div>
+      </div>
+      <!-- Paste panel -->
+      <div id="panelPaste" style="display:none;">
+        <div id="pasteZone" tabindex="0"
+          style="border:2px dashed #334155;border-radius:6px;padding:16px 8px;text-align:center;
+                 color:#475569;font-size:0.75rem;cursor:pointer;outline:none;transition:.2s;"
+          title="Click செய்து Ctrl+V அல்லது Right-click → Paste">
+          <div style="font-size:1.4rem;">📋</div>
+          <div>இங்கே click செய்து <strong>Ctrl+V</strong> paste செய்யவும்</div>
+          <div style="font-size:0.65rem;margin-top:3px;">(Screenshot crop செய்து copy செய்யவும்)</div>
+        </div>
+        <div id="pasteStatus" style="font-size:0.68rem;color:#38bdf8;margin-top:4px;"></div>
+      </div>
+      <!-- URL panel -->
+      <div id="panelUrl" style="display:none;">
+        <input type="text" id="mapUrl" placeholder="Map image URL இங்கே paste செய்யவும்">
+      </div>
+    </div>
+
+    <div class="sec">📍 Google Maps இலிருந்து Location</div>
+    <div class="fg">
+      <label>Google Maps Link Paste செய்யவும்</label>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="gmapsLink" placeholder="https://maps.google.com/?q=... or maps.app.goo.gl/...">
+        <button onclick="parseGmapsLink()" style="background:#1d4ed8;color:#fff;border:none;border-radius:6px;
+          padding:7px 10px;cursor:pointer;font-size:0.75rem;white-space:nowrap;font-weight:700;">✅ Fill</button>
+      </div>
+      <div id="gmapsStatus" style="font-size:0.68rem;color:#38bdf8;margin-top:4px;"></div>
+    </div>
+    <div class="fg">
+      <button onclick="openGmapsPicker()" class="btn btn-up" style="margin-top:0;font-size:0.78rem;padding:7px;">
+        🗺️ Google Maps-ல் Location Pick செய்யவும்
+      </button>
+      <div style="font-size:0.65rem;color:#475569;margin-top:3px;">
+        Maps திறந்து Location right-click → "இந்த இடம் என்ன?" → link copy → மேலே paste செய்யவும்
+      </div>
+    </div>
+    <div class="fg">
+      <label>Map Thumb Size</label>
+      <div class="sl-row">
+        <input type="range" id="mapSize" min="60" max="200" value="110" oninput="sv('mapSV',this.value+'%');if(imgSrc)render()">
+        <span class="sv" id="mapSV">110%</span>
+      </div>
+    </div>
+    <p class="hint" style="margin-top:0;margin-bottom:6px;">🖱️ Canvas-ல் map thumbnail-ஐ drag செய்யலாம்</p>
+
+    <div class="sec">⚙️ Overlay Settings</div>
+    <div class="fg">
+      <label>Text Scale</label>
+      <div class="sl-row">
+        <input type="range" id="tScale" min="50" max="160" value="100" oninput="sv('tSV',this.value+'%');if(imgSrc)render()">
+        <span class="sv" id="tSV">100%</span>
+      </div>
+    </div>
+    <div class="fg">
+      <label>Overlay Height</label>
+      <div class="sl-row">
+        <input type="range" id="oHeight" min="5" max="20" value="11" oninput="sv('oHSV',this.value);if(imgSrc)render()">
+        <span class="sv" id="oHSV">11</span>
+      </div>
+    </div>
+    <div class="tog-row">
+      <span class="tog-lbl">🇮🇳 India Flag</span>
+      <label class="toggle"><input type="checkbox" id="showFlag" checked><span class="tslider"></span></label>
+    </div>
+    <div class="tog-row">
+      <span class="tog-lbl">📷 GPS Badge</span>
+      <label class="toggle"><input type="checkbox" id="showBadge" checked><span class="tslider"></span></label>
+    </div>
+
+    <button class="btn btn-ap" onclick="render()">🔄 Update Watermark</button>
+    <button class="btn btn-dl" id="dlBtn" onclick="dlImg()">⬇️ Download Image</button>
+  </div>
+
+  <!-- ── RIGHT PREVIEW ── -->
+  <div class="prev">
+    <div class="prev-hd">🖼️ Live Preview — drag map thumbnail on canvas</div>
+    <div class="ph" id="ph">
+      <div class="ico">📷</div>
+      <div>Photo select செய்யவும்</div>
+    </div>
+    <canvas id="previewCanvas"></canvas>
+    <div class="stat" id="stat">Photo upload செய்த பிறகு preview தெரியும்</div>
+    <p class="hint">Map thumbnail-ஐ canvas மீது drag செய்து position மாற்றலாம்</p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script>
+// ── State ──
+let imgSrc = null, cropper = null;
+let mapOffsetX = -1, mapOffsetY = -1; // -1 = auto
+let isDragging = false, dragStartX, dragStartY, dragOX, dragOY;
+let lastMapRect = null; // {x,y,w,h} in canvas coords
+
+// Init datetime
+const dn = new Date();
+const pd = v => String(v).padStart(2,'0');
+document.getElementById('dt').value =
+  `${dn.getFullYear()}-${pd(dn.getMonth()+1)}-${pd(dn.getDate())}T${pd(dn.getHours())}:${pd(dn.getMinutes())}`;
+
+function sv(id, val) { document.getElementById(id).textContent = val; }
+
+// ── File Upload ──
+document.getElementById('fileInput').onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    document.getElementById('cropModal').style.display = 'flex';
+    const ci = document.getElementById('cropImage');
+    ci.src = ev.target.result;
+    if(cropper) { cropper.destroy(); cropper = null; }
+    setTimeout(()=>{ cropper = new Cropper(ci,{viewMode:1,autoCropArea:1}); }, 100);
+  };
+  r.readAsDataURL(f);
+};
+
+function finishCrop() {
+  if(!cropper) return;
+  const cc = cropper.getCroppedCanvas();
+  imgSrc = new Image();
+  imgSrc.onload = () => {
+    document.getElementById('cropModal').style.display = 'none';
+    mapOffsetX = mapOffsetY = -1; // reset map position
+    render();
+  };
+  imgSrc.src = cc.toDataURL();
+}
+function closeCrop() {
+  document.getElementById('cropModal').style.display = 'none';
+  if(cropper){ cropper.destroy(); cropper=null; }
+}
+
+// ── Map Tab Switcher ──
+function switchMapTab(tab) {
+  ['upload','paste','url'].forEach(t => {
+    document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('on', t===tab);
+    document.getElementById('panel'+t.charAt(0).toUpperCase()+t.slice(1)).style.display = t===tab?'':'none';
+  });
+}
+
+// ── Map File Upload ──
+document.getElementById('mapFileInput').onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    loadMapImage(ev.target.result);
+    document.getElementById('mapUploadName').textContent = '✅ ' + f.name;
+  };
+  r.readAsDataURL(f);
+};
+
+// ── Clipboard Paste for Map ──
+const pasteZone = document.getElementById('pasteZone');
+pasteZone.addEventListener('click', () => pasteZone.focus());
+pasteZone.addEventListener('keydown', e => {
+  if((e.ctrlKey || e.metaKey) && e.key === 'v') { e.preventDefault(); readClipboardImage(); }
+});
+document.addEventListener('paste', e => {
+  // Only handle if pasteZone focused or no other input focused
+  const active = document.activeElement;
+  const isInputFocused = active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA') && active !== pasteZone;
+  if(isInputFocused) return;
+  const items = e.clipboardData && e.clipboardData.items;
+  if(!items) return;
+  for(const item of items) {
+    if(item.type.startsWith('image/')) {
+      const blob = item.getAsFile();
+      const r = new FileReader();
+      r.onload = ev => {
+        loadMapImage(ev.target.result);
+        pasteZone.classList.add('has-img');
+        document.getElementById('pasteStatus').textContent = '✅ Image paste ஆனது!';
+      };
+      r.readAsDataURL(blob);
+      return;
+    }
+  }
+});
+
+async function readClipboardImage() {
+  try {
+    const items = await navigator.clipboard.read();
+    for(const item of items) {
+      const imgType = item.types.find(t => t.startsWith('image/'));
+      if(imgType) {
+        const blob = await item.getType(imgType);
+        const r = new FileReader();
+        r.onload = ev => {
+          loadMapImage(ev.target.result);
+          pasteZone.classList.add('has-img');
+          document.getElementById('pasteStatus').textContent = '✅ Image paste ஆனது!';
+        };
+        r.readAsDataURL(blob);
+        return;
+      }
+    }
+    document.getElementById('pasteStatus').textContent = '⚠️ Clipboard-ல் image இல்லை. Screenshot copy செய்யவும்.';
+  } catch(err) {
+    document.getElementById('pasteStatus').textContent = '⚠️ Ctrl+V மூலம் நேரடியாக paste செய்யவும்.';
+  }
+}
+
+function loadMapImage(dataUrl) {
+  const mi = new Image();
+  mi._url = '__uploaded__';
+  mi.onload = () => { window._mapImg = mi; if(imgSrc) render(); };
+  mi.src = dataUrl;
+}
+
+// ── Google Maps Link Parser ──
+function parseGmapsLink() {
+  const raw = document.getElementById('gmapsLink').value.trim();
+  const status = document.getElementById('gmapsStatus');
+  if(!raw) { status.textContent = '⚠️ Link paste செய்யவும்'; return; }
+
+  // Pattern 1: @lat,lng in URL
+  let m = raw.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if(m) {
+    setLatLng(m[1], m[2]);
+    status.textContent = '✅ Lat/Lng fill ஆனது! Address manually check செய்யவும்.';
+    return;
+  }
+
+  // Pattern 2: ?q=lat,lng
+  m = raw.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if(m) { setLatLng(m[1], m[2]); status.textContent = '✅ Lat/Lng fill ஆனது!'; return; }
+
+  // Pattern 3: /place/address
+  m = raw.match(/\/place\/([^/]+)/);
+  if(m) {
+    const decoded = decodeURIComponent(m[1].replace(/\+/g,' '));
+    document.getElementById('locName').value = decoded.split(',')[0];
+    document.getElementById('address').value = decoded;
+    status.textContent = '✅ Location name fill ஆனது!';
+    if(imgSrc) render();
+    return;
+  }
+
+  // Pattern 4: goo.gl short link — open in new tab for manual copy
+  if(raw.includes('goo.gl') || raw.includes('maps.app')) {
+    status.innerHTML = '⚠️ Short link — <a href="'+raw+'" target="_blank" style="color:#38bdf8;">இங்கே திறந்து</a> full URL copy செய்து paste செய்யவும்.';
+    return;
+  }
+
+  status.textContent = '⚠️ Lat/Lng கிடைக்கவில்லை. Full Google Maps URL paste செய்யவும்.';
+}
+
+function setLatLng(lat, lng) {
+  document.getElementById('lat').value = parseFloat(lat).toFixed(6) + '°';
+  document.getElementById('lng').value = parseFloat(lng).toFixed(6) + '°';
+  // Reverse geocode using nominatim (free, no key needed)
+  fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
+    .then(r => r.json())
+    .then(d => {
+      if(d && d.display_name) {
+        const parts = d.display_name.split(',');
+        document.getElementById('locName').value = (parts[0]+','+(parts[1]||'')).trim().replace(/,$/,'');
+        document.getElementById('address').value = d.display_name;
+        document.getElementById('gmapsStatus').textContent = '✅ Address auto fill ஆனது!';
+        if(imgSrc) render();
+      }
+    }).catch(()=>{});
+  if(imgSrc) render();
+}
+
+function openGmapsPicker() {
+  window.open('https://maps.google.com', '_blank');
+}
+
+// Override map render to support uploaded map image
+const _origMapUrl = () => {
+  const urlInput = document.getElementById('mapUrl');
+  return urlInput ? urlInput.value.trim() : '';
+};
+
+// Live-update on input
+['locName','address','lat','lng','dt','tz','mapUrl'].forEach(id=>
+  document.getElementById(id).addEventListener('input', ()=>{ if(imgSrc) render(); })
+);
+['showMap','showFlag','showBadge'].forEach(id=>
+  document.getElementById(id).addEventListener('change', ()=>{ if(imgSrc) render(); })
+);
+
+// ── Format Date ──
+function fmtDate(val, tz) {
+  if(!val) return '';
+  const d = new Date(val);
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dd = pd(d.getDate()), mm = pd(d.getMonth()+1), yyyy = d.getFullYear();
+  let h = d.getHours(), mi = pd(d.getMinutes());
+  const ap = h>=12?'PM':'AM'; h = h%12||12;
+  return `${DAYS[d.getDay()]}, ${dd}/${mm}/${yyyy} ${pd(h)}:${mi} ${ap} ${tz}`;
+}
+
+// ── Word-wrap helper ──
+function wrapText(ctx, text, maxW) {
+  const words = text.split(' '), lines = [];
+  let cur = '';
+  for(const w of words){
+    const test = cur ? cur+' '+w : w;
+    if(ctx.measureText(test).width > maxW && cur){ lines.push(cur); cur=w; }
+    else cur = test;
+  }
+  if(cur) lines.push(cur);
+  return lines;
+}
+
+// ── Draw satellite-style map placeholder ──
+function drawMapPlaceholder(ctx, x, y, w, h) {
+  // Background gradient (satellite map feel)
+  const g = ctx.createLinearGradient(x, y, x+w, y+h);
+  g.addColorStop(0, '#3a5a3a');
+  g.addColorStop(0.3, '#4a6e4a');
+  g.addColorStop(0.6, '#5a7a5a');
+  g.addColorStop(1, '#6b8f6b');
+  ctx.fillStyle = g;
+  ctx.fillRect(x, y, w, h);
+
+  // Grid lines (road-like)
+  ctx.strokeStyle = 'rgba(180,160,100,0.35)';
+  ctx.lineWidth = Math.max(1, w*0.015);
+  // Horizontal
+  for(let i=1;i<4;i++){
+    ctx.beginPath(); ctx.moveTo(x, y+h*i/4); ctx.lineTo(x+w, y+h*i/4); ctx.stroke();
+  }
+  // Vertical
+  for(let i=1;i<4;i++){
+    ctx.beginPath(); ctx.moveTo(x+w*i/4, y); ctx.lineTo(x+w*i/4, y+h); ctx.stroke();
+  }
+
+  // Road (main)
+  ctx.strokeStyle = 'rgba(220,190,110,0.6)';
+  ctx.lineWidth = Math.max(2, w*0.025);
+  ctx.beginPath();
+  ctx.moveTo(x, y+h*0.55);
+  ctx.lineTo(x+w*0.35, y+h*0.6);
+  ctx.lineTo(x+w*0.65, y+h*0.45);
+  ctx.lineTo(x+w, y+h*0.5);
+  ctx.stroke();
+
+  // Building blocks
+  const blocks = [
+    [0.1,0.2,0.12,0.1,'rgba(100,140,160,0.6)'],
+    [0.25,0.15,0.08,0.12,'rgba(80,120,100,0.5)'],
+    [0.55,0.25,0.1,0.08,'rgba(120,100,80,0.5)'],
+    [0.7,0.15,0.08,0.1,'rgba(90,130,120,0.55)'],
+    [0.15,0.68,0.1,0.09,'rgba(100,140,160,0.55)'],
+    [0.6,0.65,0.12,0.1,'rgba(80,110,90,0.5)'],
+  ];
+  blocks.forEach(([bx,by,bw,bh,col])=>{
+    ctx.fillStyle=col;
+    ctx.fillRect(x+w*bx, y+h*by, w*bw, h*bh);
+  });
+
+  // Blue water body
+  ctx.fillStyle = 'rgba(60,120,180,0.45)';
+  ctx.beginPath();
+  ctx.ellipse(x+w*0.2, y+h*0.78, w*0.12, h*0.08, 0, 0, Math.PI*2);
+  ctx.fill();
+}
+
+// ── Draw red pin marker ──
+function drawPin(ctx, cx, cy, r) {
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath(); ctx.ellipse(cx, cy+r*1.1, r*0.5, r*0.2, 0, 0, Math.PI*2); ctx.fill();
+  // Pin body
+  ctx.fillStyle = '#e53935';
+  ctx.beginPath();
+  ctx.arc(cx, cy-r*0.5, r, 0, Math.PI*2);
+  ctx.fill();
+  // Pin tail
+  ctx.beginPath();
+  ctx.moveTo(cx-r*0.6, cy-r*0.2);
+  ctx.lineTo(cx, cy+r*1.1);
+  ctx.lineTo(cx+r*0.6, cy-r*0.2);
+  ctx.fill();
+  // White circle inside
+  ctx.fillStyle = 'white';
+  ctx.beginPath(); ctx.arc(cx, cy-r*0.5, r*0.38, 0, Math.PI*2); ctx.fill();
+}
+
+// ── MAIN RENDER ──
+function render() {
+  if(!imgSrc) return;
+  const canvas = document.getElementById('previewCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width = imgSrc.width;
+  const H = canvas.height = imgSrc.height;
+  ctx.drawImage(imgSrc, 0, 0);
+
+  document.getElementById('ph').style.display = 'none';
+  canvas.style.display = 'block';
+  document.getElementById('dlBtn').style.display = 'block';
+
+  const tsc   = document.getElementById('tScale').value / 100;
+  const oHFac = parseFloat(document.getElementById('oHeight').value);
+  const showMapThumb = document.getElementById('showMap').checked;
+  const showFlag  = document.getElementById('showFlag').checked;
+  const showBadge = document.getElementById('showBadge').checked;
+  const mapSizeScale = document.getElementById('mapSize').value / 100;
+
+  // ── Base unit ──
+  const base = Math.max(12, W * 0.022) * tsc;
+
+  // ── Text data ──
+  const locName = document.getElementById('locName').value;
+  const address = document.getElementById('address').value;
+  const lat     = document.getElementById('lat').value;
+  const lng     = document.getElementById('lng').value;
+  const tz      = document.getElementById('tz').value;
+  const dtStr   = fmtDate(document.getElementById('dt').value, tz);
+  const latLng  = `Lat ${lat}  Long ${lng}`;
+
+  // ── Map thumbnail dimensions ──
+  const mapThumbH = base * oHFac * 0.88;
+  const mapThumbW = mapThumbH * 1.05;
+
+  // ── Measure text to find right-side content width ──
+  const cityFS = base * 1.32;
+  const infoFS = base * 0.75;
+  ctx.font = `bold ${cityFS}px 'Segoe UI', Arial, sans-serif`;
+  const cityTW = ctx.measureText(locName).width;
+  const flagW  = showFlag ? cityFS * 1.4 : 0;
+  const flagGap = showFlag ? base * 0.5 : 0;
+
+  ctx.font = `${infoFS}px 'Segoe UI', Arial, sans-serif`;
+  const infoMaxW = W * 0.56; // right panel text max width
+
+  // Wrap address
+  const addrLines = wrapText(ctx, address, infoMaxW);
+  const addrText  = document.getElementById('address').value;
+
+  // ── Overlay height ──
+  const lineH   = infoFS * 1.72;
+  const cityLH  = cityFS * 1.55;
+  const vPad    = base * 0.75;
+  const infoLines = addrLines.length + 2; // addr(wrapped) + latLng + date
+  const overlayH = vPad + cityLH + lineH * infoLines + vPad;
+
+  // ── Overlay Y ──
+  const overlayY = H - overlayH;
+
+  // ── Draw full-width dark overlay ──
+  ctx.save();
+  ctx.fillStyle = 'rgba(15, 20, 35, 0.82)';
+  ctx.fillRect(0, overlayY, W, overlayH);
+  ctx.restore();
+
+  // ── Map thumbnail ──
+  const mW = mapThumbW * mapSizeScale;
+  const mH = mapThumbH * mapSizeScale;
+  const mMargin = base * 0.5;
+
+  // Auto position: bottom-left of overlay, centered vertically
+  if(mapOffsetX < 0 || mapOffsetY < 0) {
+    mapOffsetX = mMargin;
+    mapOffsetY = overlayY + (overlayH - mH) / 2;
+  }
+
+  // Clamp to stay inside image
+  mapOffsetX = Math.max(0, Math.min(W - mW, mapOffsetX));
+  mapOffsetY = Math.max(0, Math.min(H - mH, mapOffsetY));
+
+  if(showMapThumb) {
+    // Draw map tile
+    const mapUrl = document.getElementById('mapUrl') ? document.getElementById('mapUrl').value.trim() : '';
+    const hasUploadedMap = window._mapImg && window._mapImg._url === '__uploaded__';
+    if(hasUploadedMap) {
+      ctx.save();
+      ctx.beginPath();
+      roundRect(ctx, mapOffsetX, mapOffsetY, mW, mH, base*0.25);
+      ctx.clip();
+      ctx.drawImage(window._mapImg, mapOffsetX, mapOffsetY, mW, mH);
+      ctx.restore();
+    } else if(mapUrl && window._mapImg && window._mapImg._url === mapUrl) {
+      ctx.save();
+      ctx.beginPath();
+      roundRect(ctx, mapOffsetX, mapOffsetY, mW, mH, base*0.25);
+      ctx.clip();
+      ctx.drawImage(window._mapImg, mapOffsetX, mapOffsetY, mW, mH);
+      ctx.restore();
+    } else if(mapUrl && (!window._mapImg || window._mapImg._url !== mapUrl)) {
+      // Load and re-render
+      const mi = new Image(); mi.crossOrigin='anonymous';
+      mi._url = mapUrl;
+      mi.onload = () => { window._mapImg = mi; render(); };
+      mi.onerror = () => { window._mapImg = null; render(); };
+      mi.src = mapUrl;
+      // Draw placeholder while loading
+      ctx.save();
+      ctx.beginPath(); roundRect(ctx, mapOffsetX, mapOffsetY, mW, mH, base*0.25); ctx.clip();
+      drawMapPlaceholder(ctx, mapOffsetX, mapOffsetY, mW, mH);
+      ctx.restore();
+    } else {
+      // Draw generated satellite map
+      ctx.save();
+      ctx.beginPath(); roundRect(ctx, mapOffsetX, mapOffsetY, mW, mH, base*0.25); ctx.clip();
+      drawMapPlaceholder(ctx, mapOffsetX, mapOffsetY, mW, mH);
+      ctx.restore();
+    }
+
+    // Pin at center
+    const pinCX = mapOffsetX + mW * 0.42;
+    const pinCY = mapOffsetY + mH * 0.52;
+    drawPin(ctx, pinCX, pinCY, mH * 0.11);
+
+    // "Google" watermark on map
+    ctx.font = `bold ${Math.max(9, mH*0.1)}px 'Segoe UI', Arial`;
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('Google', mapOffsetX + base*0.3, mapOffsetY + mH - base*0.15);
+
+    lastMapRect = { x: mapOffsetX, y: mapOffsetY, w: mW, h: mH };
+  }
+
+  // ── GPS Badge (top-right corner of overlay) ──
+  if(showBadge) {
+    const badgeFS = base * 0.68;
+    const badgeText = 'GPS Map Camera';
+    ctx.font = `bold ${badgeFS}px 'Segoe UI', Arial`;
+    const btw = ctx.measureText(badgeText).width;
+    const bpx = base * 0.6, bpy = base * 0.35;
+    const iconR = badgeFS * 0.42;
+    const bW = iconR*2 + base*0.3 + btw + bpx*2;
+    const bH = badgeFS + bpy*2;
+    const bX = W - bW - base*0.4;
+    const bY = overlayY - bH * 0.5;
+
+    ctx.save();
+    roundRect(ctx, bX, bY, bW, bH, bH*0.28);
+    ctx.fillStyle = 'rgba(20,28,50,0.92)';
+    ctx.fill();
+    ctx.restore();
+
+    // Camera icon
+    const icX = bX + bpx + iconR;
+    const icY = bY + bH/2;
+    ctx.save();
+    ctx.fillStyle = '#fff';
+    // Camera body
+    ctx.beginPath();
+    roundRect(ctx, icX-iconR, icY-iconR*0.72, iconR*2, iconR*1.44, iconR*0.22);
+    ctx.fill();
+    // Lens
+    ctx.fillStyle = 'rgba(30,50,100,0.9)';
+    ctx.beginPath(); ctx.arc(icX, icY, iconR*0.48, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(100,150,220,0.8)';
+    ctx.beginPath(); ctx.arc(icX, icY, iconR*0.28, 0, Math.PI*2); ctx.fill();
+    // Flash bump
+    ctx.fillStyle = 'rgba(200,200,200,0.8)';
+    ctx.fillRect(icX + iconR*0.45, icY - iconR*0.65, iconR*0.35, iconR*0.28);
+    ctx.restore();
+
+    ctx.font = `bold ${badgeFS}px 'Segoe UI', Arial`;
+    ctx.fillStyle = '#e2e8f0';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(badgeText, icX + iconR + base*0.3, icY);
+  }
+
+  // ── Right panel: text content ──
+  const textX = showMapThumb ? mapOffsetX + mW + base * 0.8 : base * 1.0;
+  const textMaxW = W - textX - base * 0.8;
+  let ty = overlayY + vPad + cityFS * 0.88;
+
+  // City name (large bold white)
+  ctx.font = `bold ${cityFS}px 'Segoe UI', Arial, sans-serif`;
+  ctx.fillStyle = '#ffffff';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(locName, textX, ty);
+
+  // Flag emoji
+  if(showFlag) {
+    const cx = ctx.measureText(locName).width;
+    ctx.font = `${cityFS * 0.88}px Arial, 'Segoe UI Emoji'`;
+    ctx.fillText('🇮🇳', textX + cx + flagGap, ty);
+  }
+
+  ty += lineH * 0.22;
+
+  // Info lines (small, off-white)
+  ctx.font = `${infoFS}px 'Segoe UI', Arial, sans-serif`;
+  ctx.fillStyle = 'rgba(220, 228, 240, 0.92)';
+
+  // Address (wrapped)
+  const aLines = wrapText(ctx, address, textMaxW);
+  aLines.forEach(line => {
+    ty += lineH;
+    ctx.fillText(line, textX, ty);
+  });
+
+  // Lat / Long
+  ty += lineH;
+  ctx.fillText(`Lat ${lat}  Long ${lng}`, textX, ty);
+
+  // Date / Time
+  ty += lineH;
+  ctx.fillText(dtStr, textX, ty);
+
+  document.getElementById('stat').textContent = `✅ Ready — ${W}×${H}px`;
+}
+
+// ── Drag map thumbnail ──
+const canvas = document.getElementById('previewCanvas');
+
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+}
+
+function inMapRect(px, py) {
+  if(!lastMapRect || !document.getElementById('showMap').checked) return false;
+  const {x,y,w,h} = lastMapRect;
+  return px>=x && px<=x+w && py>=y && py<=y+h;
+}
+
+canvas.addEventListener('mousedown', e => {
+  const {x,y} = getCanvasPos(e);
+  if(inMapRect(x,y)) {
+    isDragging = true; dragStartX = x; dragStartY = y;
+    dragOX = mapOffsetX; dragOY = mapOffsetY;
+    canvas.style.cursor = 'grabbing';
+  }
+});
+canvas.addEventListener('mousemove', e => {
+  if(!isDragging) {
+    const {x,y} = getCanvasPos(e);
+    canvas.style.cursor = inMapRect(x,y) ? 'grab' : 'default';
+    return;
+  }
+  const {x,y} = getCanvasPos(e);
+  mapOffsetX = dragOX + (x - dragStartX);
+  mapOffsetY = dragOY + (y - dragStartY);
+  render();
+});
+canvas.addEventListener('mouseup', () => { isDragging=false; canvas.style.cursor='default'; });
+canvas.addEventListener('mouseleave', () => { isDragging=false; });
+
+// Touch support
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const {x,y} = getCanvasPos(e);
+  if(inMapRect(x,y)) {
+    isDragging=true; dragStartX=x; dragStartY=y;
+    dragOX=mapOffsetX; dragOY=mapOffsetY;
+  }
+}, {passive:false});
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if(!isDragging) return;
+  const {x,y} = getCanvasPos(e);
+  mapOffsetX = dragOX + (x - dragStartX);
+  mapOffsetY = dragOY + (y - dragStartY);
+  render();
+}, {passive:false});
+canvas.addEventListener('touchend', () => { isDragging=false; });
+
+function roundRect(ctx, x, y, w, h, r) {
+  r = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y); ctx.arcTo(x+w,y, x+w,y+r, r);
+  ctx.lineTo(x+w, y+h-r); ctx.arcTo(x+w,y+h, x+w-r,y+h, r);
+  ctx.lineTo(x+r, y+h); ctx.arcTo(x,y+h, x,y+h-r, r);
+  ctx.lineTo(x, y+r); ctx.arcTo(x,y, x+r,y, r);
+  ctx.closePath();
+}
+
+function dlImg() {
+  const a = document.createElement('a');
+  a.download = 'gps_photo_' + Date.now() + '.jpg';
+  a.href = canvas.toDataURL('image/jpeg', 0.96);
+  a.click();
+}
+</script>
+</body>
+</html>
