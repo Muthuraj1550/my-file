@@ -81,6 +81,19 @@
   ],
   "files": [
     {
+      "id": "550492dc-3708-4fb9-bbff-69fb97a7ee2a",
+      "project_id": "fdb787e3-c801-480b-8f56-36e1e3337f06",
+      "file_group_id": "da35174c-becd-4278-b5fb-0434fbb601ae",
+      "title": "add stroke",
+      "description": null,
+      "version": 1,
+      "path": "files/fdb787e3-c801-480b-8f56-36e1e3337f06/da35174c-becd-4278-b5fb-0434fbb601ae/v1-engine_fixed__2_.html",
+      "original_name": "engine_fixed (2).html",
+      "mime_type": "text/html",
+      "size_bytes": 944266,
+      "created_at": "2026-10-20T05:23:42.798Z"
+    },
+    {
       "id": "bc279280-bf86-4dc0-a0a3-b1dda5456d02",
       "project_id": "fdb787e3-c801-480b-8f56-36e1e3337f06",
       "file_group_id": "1cd26597-d1d1-4974-bc50-1071b8ef1664",
